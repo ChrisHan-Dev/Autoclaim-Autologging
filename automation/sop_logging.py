@@ -1,15 +1,13 @@
 """
-sop_logging.py — Auto-fill "Logging SOP (SUSPECT)" form (STANDALONE)
-======================================================================
-Doc lap hoan toan voi autoclaim. Chay bang sop_main.py.
+sop_logging.py — Auto-fill "Logging SOP (SUSPECT)" form (STANDALONE & Multi-Display)
+===================================================================================
+Độc lập hoàn toàn với autoclaim. Chạy bằng sop_main.py.
 
-Cach hoat dong:
-  1. User nhan hotkey (F1-F4) khi form SOP dang mo
-  2. Script click tung dropdown theo thu tu va chon option dinh san
-  3. Fill Comment neu co
-
-De them/sua case: chinh sua dict SOP_CASES ben duoi.
-De doi hotkey: sua sop/sop_config.json -> "hotkeys"
+Cách hoạt động:
+  1. User nhấn hotkey (Insert, Home, PgUp, PgDn, End) hoặc click trên HUD
+  2. Script kiểm tra màn hình đang chọn (Màn 1 hoặc Màn 2)
+  3. Script click từng dropdown theo thứ tự và chọn option định sẵn
+  4. Fill Comment nếu có
 """
 
 from __future__ import annotations
@@ -73,8 +71,8 @@ class Resolution:
 
 
 # =============================================================================
-# DROPDOWN OPTION ORDER (phai khop chinh xac voi thu tu trong UI)
-# Dung de tinh toa do click theo index
+# DROPDOWN OPTION ORDER (phải khớp chính xác với thứ tự trong UI)
+# Dùng để tính toạ độ click theo index
 # =============================================================================
 
 DROPDOWN_OPTIONS: dict[str, list[str]] = {
@@ -118,10 +116,9 @@ DROPDOWN_OPTIONS: dict[str, list[str]] = {
     ],
 }
 
-# Vision Functionality + Resolution: click 1 cai tu dong dong, KHONG can ESC
-# Actions Required + Maintenance Issues: multi-select, PHAI an ESC de dong
 SINGLE_SELECT_FIELDS = {"vision_functionality", "resolution"}
 MULTI_SELECT_FIELDS  = {"actions_required", "maintenance_issues"}
+
 
 # =============================================================================
 # SOP CASE DEFINITION
@@ -129,26 +126,21 @@ MULTI_SELECT_FIELDS  = {"actions_required", "maintenance_issues"}
 
 @dataclass
 class SOPCase:
-    """
-    Mot truong hop SOP day du.
-    De None o nhung field khong can dien.
-    actions_required co the la str hoac list[str] (multi-select).
-    """
     name: str
     vision_functionality: Optional[str] = None
-    actions_required: Optional[str | list] = None   # str hoac [str, str, ...]
+    actions_required: Optional[str | list] = None
     maintenance_issues: Optional[str] = None
     resolution: Optional[str] = None
     comment: str = ""
 
 
 # =============================================================================
-# ← DIEN CAC TRUONG HOP CUA BAN VAO DAY
+# CÁC TRƯỜNG HỢP SOP MẶC ĐỊNH
 # =============================================================================
 
 SOP_CASES: dict[str, SOPCase] = {
 
-    # ── Case 1 (F1) ── All cameras / Align+Extract / (no maint) / Successful
+    # ── Case 1 (Insert) ── All cameras / Align+Extract / (no maint) / Successful
     "f1": SOPCase(
         name                 = "Case 1 - All cam / Align+Extract / Successful",
         vision_functionality = VisionFunctionality.ALL_CAMERAS,
@@ -158,7 +150,7 @@ SOP_CASES: dict[str, SOPCase] = {
         comment              = "",
     ),
 
-    # ── Case 2 (F2) ── No cameras / No action-forced / (no maint) / Unsuccessful
+    # ── Case 2 (Home) ── No cameras / No action-forced / (no maint) / Unsuccessful
     "f2": SOPCase(
         name                 = "Case 2 - No cam / No action forced / Unsuccessful",
         vision_functionality = VisionFunctionality.NO_CAMERAS,
@@ -168,7 +160,7 @@ SOP_CASES: dict[str, SOPCase] = {
         comment              = "",
     ),
 
-    # ── Case 3 (F3) ── All cameras / No action-forced / Not pickable / Unsuccessful
+    # ── Case 3 (PgUp) ── All cameras / No action-forced / Not pickable / Unsuccessful
     "f3": SOPCase(
         name                 = "Case 3 - All cam / No action forced / Not pickable / Unsuccessful",
         vision_functionality = VisionFunctionality.ALL_CAMERAS,
@@ -178,7 +170,7 @@ SOP_CASES: dict[str, SOPCase] = {
         comment              = "",
     ),
 
-    # ── Case 4 (F4) ── All cameras / Align+Extract / Damaged case / CHD with payload
+    # ── Case 4 (PgDn) ── All cameras / Align+Extract / Damaged case / CHD with payload
     "f4": SOPCase(
         name                 = "Case 4 - All cam / Align+Extract / Damaged case / CHD",
         vision_functionality = VisionFunctionality.ALL_CAMERAS,
@@ -188,7 +180,7 @@ SOP_CASES: dict[str, SOPCase] = {
         comment              = "",
     ),
 
-    # ── Case 5 (F5) ── All cameras / No action-forced / No case / Successful
+    # ── Case 5 (End) ── All cameras / No action-forced / No case / Successful
     "f5": SOPCase(
         name                 = "Case 5 - All cam / No action / No case / Successful",
         vision_functionality = VisionFunctionality.ALL_CAMERAS,
@@ -202,21 +194,13 @@ SOP_CASES: dict[str, SOPCase] = {
 
 
 # =============================================================================
-# FORM FILLER ENGINE  (position-based — KHONG dung OCR)
+# FORM FILLER ENGINE  (position-based — KHÔNG dùng OCR)
 # =============================================================================
 
 class SOPFormFiller:
     """
-    Chon option trong dropdown theo toa do pixel da calibrate.
-    KHONG dung OCR.
-
-    Phan loai dropdown:
-      Single-select (Vision, Resolution):
-        click dropdown -> click option -> dropdown tu dong dong
-      Multi-select (Actions, Maintenance):
-        click dropdown -> click cac option -> an ESC de dong
-
-    Can chay 'python sop_main.py calibrate_options' truoc.
+    Chọn option trong dropdown theo toạ độ pixel đã calibrate của màn hình tương ứng.
+    KHÔNG dùng OCR.
     """
 
     def __init__(self, cfg) -> None:
@@ -224,38 +208,34 @@ class SOPFormFiller:
         timing = cfg.timing_cfg
         mouse  = cfg.mouse_cfg
 
-        self.CLICK_DELAY    = timing.get("click_delay_s",    0.3)
-        self.DROPDOWN_DELAY = timing.get("dropdown_delay_s", 0.5)
-        self.OPTION_DELAY   = timing.get("option_delay_s",   0.25)
-        self.TYPE_INTERVAL  = timing.get("type_interval_s",  0.05)
+        self.CLICK_DELAY    = timing.get("click_delay_s",    0.03)
+        self.DROPDOWN_DELAY = timing.get("dropdown_delay_s", 0.12)
+        self.OPTION_DELAY   = timing.get("option_delay_s",   0.03)
+        self.TYPE_INTERVAL  = timing.get("type_interval_s",  0.02)
         
-        # Su dung dung MouseController cua autoclaim!
         from automation.clicker import MouseController
         self.mouse = MouseController(mouse, timing)
 
-    def warmup(self) -> None:
-        """Kiem tra calibration truoc khi chay."""
-        import pyautogui
-        pyautogui.FAILSAFE = False  # Tranh loi khi chuot dung goc man hinh
-        geom = self._cfg.get("dropdown_geometry", {})
+    def warmup(self, display_id: int | None = None) -> None:
+        """Kiểm tra calibration trước khi chạy."""
+        pyautogui.FAILSAFE = False
+        d_id = display_id if display_id is not None else self._cfg.get_active_display()
+        geom = self._cfg.get_dropdown_geometry(d_id)
         missing = [f for f in DROPDOWN_OPTIONS if f not in geom]
         if missing:
-            print(f"[SOP] WARN: Chua calibrate options cho: {missing}")
-            print(f"[SOP]       Chay: python sop_main.py calibrate_options")
+            print(f"[SOP] WARN (Màn {d_id}): Chưa calibrate options cho: {missing}")
+            print(f"[SOP]       Chạy: python sop_main.py calibrate_options --display {d_id}")
         else:
-            print("[SOP] Ready (position-based, no OCR).")
+            print(f"[SOP] Ready (Màn {d_id}, position-based, no OCR).")
 
     # ── win32 mouse implementation (multi-monitor & hardware-safe) ─────────────
 
     def _move_cursor(self, x: int, y: int) -> None:
-        """Dich chuyen chuot tuc thi den toa do ao (0ms, ho tro moi man hinh)."""
+        """Dịch chuyển chuột tức thì đến toạ độ ảo (0ms, hỗ trợ mọi màn hình)."""
         ctypes.windll.user32.SetCursorPos(int(x), int(y))
 
     def _hardware_click(self, hold_s: float = 0.005) -> None:
-        """
-        Nhan chuot trai duy nhat 1 lan tai vi tri hien tai (sieu toc ~5ms, chuan xac).
-        Su dung mouse_event voi dx=0, dy=0 dam bao tuong thich 100% moi man hinh.
-        """
+        """Nhấn chuột trái duy nhất 1 lần tại vị trí hiện tại (~5ms)."""
         ctypes.windll.user32.mouse_event(0x0002, 0, 0, 0, 0)  # MOUSEEVENTF_LEFTDOWN
         time.sleep(hold_s)
         ctypes.windll.user32.mouse_event(0x0004, 0, 0, 0, 0)  # MOUSEEVENTF_LEFTUP
@@ -281,7 +261,7 @@ class SOPFormFiller:
             print(f"[SOP] Lỗi click_xy: {e}")
 
     def _send_esc(self) -> None:
-        """Gửi phím ESC siêu tốc qua Win32 API (~15ms, không bị delay bởi pyautogui)."""
+        """Gửi phím ESC siêu tốc qua Win32 API (~15ms)."""
         ctypes.windll.user32.keybd_event(0x1B, 0, 0, 0)  # VK_ESCAPE DOWN
         time.sleep(0.005)
         ctypes.windll.user32.keybd_event(0x1B, 0, 2, 0)  # VK_ESCAPE UP
@@ -289,20 +269,21 @@ class SOPFormFiller:
 
     # ── position helpers ──────────────────────────────────────────────────────
 
-    def _get_option_pos(self, field: str, option_text: str) -> tuple | None:
+    def _get_option_pos(self, field: str, option_text: str, display_id: int | None = None) -> tuple | None:
         """
-        Tinh toa do man hinh cua option trong dropdown.
-        Dua tren: first_option_y + index * row_height
+        Tính toạ độ màn hình của option trong dropdown dựa trên display_id.
+        first_option_y + index * row_height
         """
-        geom = self._cfg.get("dropdown_geometry", {}).get(field)
+        d_id = display_id if display_id is not None else self._cfg.get_active_display()
+        geom = self._cfg.get_dropdown_geometry(d_id).get(field)
         if not geom:
-            print(f"[SOP] WARN: Chua calibrate options cho '{field}'!")
-            print(f"[SOP]       Chay: python sop_main.py calibrate_options")
+            print(f"[SOP] WARN: Chưa calibrate options cho '{field}' (Màn {d_id})!")
+            print(f"[SOP]       Chạy: python sop_main.py calibrate_options --display {d_id}")
             return None
 
         options_list = DROPDOWN_OPTIONS.get(field, [])
         if option_text not in options_list:
-            print(f"[SOP] WARN: '{option_text}' khong co trong DROPDOWN_OPTIONS['{field}']!")
+            print(f"[SOP] WARN: '{option_text}' không có trong DROPDOWN_OPTIONS['{field}']!")
             return None
 
         idx = options_list.index(option_text)
@@ -312,40 +293,28 @@ class SOPFormFiller:
 
     # ── single-select (Vision, Resolution): click -> auto-close ──────────────
 
-    def _select_single(self, field: str, coord: dict, option_text: str) -> bool:
-        """
-        Click dropdown, doi mo, click dung vi tri option.
-        Single-select: dropdown tu dong dong sau khi click, KHONG can ESC.
-        """
-        pos = self._get_option_pos(field, option_text)
+    def _select_single(self, field: str, coord: dict, option_text: str, display_id: int | None = None) -> bool:
+        pos = self._get_option_pos(field, option_text, display_id=display_id)
         if pos is None:
             return False
 
         idx = DROPDOWN_OPTIONS[field].index(option_text)
         print(f"[SOP]   [{idx}] {option_text} @ ({pos[0]}, {pos[1]})")
 
-        # Mo dropdown
         self._click(coord)
         time.sleep(self.DROPDOWN_DELAY)
-
-        # Click option -> tu dong dong (self._click_xy da co OPTION_DELAY)
         self._click_xy(pos[0], pos[1])
         return True
 
     # ── multi-select (Actions, Maintenance): click options -> ESC ─────────────
 
-    def _select_multi(self, field: str, coord: dict, options: list) -> bool:
-        """
-        Click dropdown, chon tung option theo vi tri, an ESC de dong.
-        Multi-select: phai an ESC vi dropdown khong tu dong dong.
-        """
-        # Mo dropdown
+    def _select_multi(self, field: str, coord: dict, options: list, display_id: int | None = None) -> bool:
         self._click(coord)
         time.sleep(self.DROPDOWN_DELAY)
 
         success = True
         for opt in options:
-            pos = self._get_option_pos(field, opt)
+            pos = self._get_option_pos(field, opt, display_id=display_id)
             if pos is None:
                 success = False
                 continue
@@ -353,34 +322,30 @@ class SOPFormFiller:
             print(f"[SOP]    + [{idx}] {opt} @ ({pos[0]}, {pos[1]})")
             self._click_xy(pos[0], pos[1])
 
-        # ESC de dong multi-select dropdown (Win32 sieu toc ~15ms)
         self._send_esc()
         return success
 
     # ── comment ───────────────────────────────────────────────────────────────
 
-    def _fill_comment(self, text: str) -> None:
+    def _fill_comment(self, text: str, coords: dict) -> None:
         if not text:
             return
-        coords = self._cfg.form_coords
-        self._click(coords["comment"])
-        pyautogui.hotkey("ctrl", "a")
-        time.sleep(0.02)
-        pyautogui.typewrite(text, interval=self.TYPE_INTERVAL)
+        if "comment" in coords:
+            self._click(coords["comment"])
+            pyautogui.hotkey("ctrl", "a")
+            time.sleep(0.02)
+            pyautogui.typewrite(text, interval=self.TYPE_INTERVAL)
 
-    def _ensure_window_focus(self) -> None:
+    def _ensure_window_focus(self, coords: dict) -> None:
         """
-        Kich hoat cua so Teleops truoc khi click dropdown:
-        1. Goi Win32 SetForegroundWindow vao cua so chua form.
-        2. Click nhe vao phan nhan text 'Vision Functionality :' o ben trai o nhap.
-           Thao tac click nay kich hoat WebView2 ma KHONG lam thay doi bat ky input nao.
+        Kích hoạt cửa sổ Teleops trước khi click dropdown:
+        1. Gọi Win32 SetForegroundWindow vào cửa sổ chứa form.
+        2. Click nhẹ vào phần nhãn text 'Vision Functionality :' ở bên trái ô nhập.
         """
-        coords = self._cfg.form_coords
         vf = coords.get("vision_functionality", {"x": 252, "y": 638})
         vx = int(vf.get("x", 252))
         vy = int(vf.get("y", 638))
 
-        # 1. Win32 SetForegroundWindow
         try:
             class POINT(ctypes.Structure):
                 _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
@@ -394,109 +359,123 @@ class SOPFormFiller:
         except Exception as e:
             print(f"[SOP] Win32 focus note: {e}")
 
-        # 2. Click nhan tinh an toan ben trai o input de WebView2 nhan focus
-        safe_x = max(10, vx - 130)
+        safe_x = max(-3000, vx - 130)
         safe_y = vy
-        print(f"[SOP] Focus Teleops window at neutral label: ({safe_x}, {safe_y})")
+        print(f"[SOP] Focus Teleops window at label: ({safe_x}, {safe_y})")
         self._move_cursor(safe_x, safe_y)
         self._hardware_click(hold_s=0.005)
         time.sleep(0.01)
 
     # ── main fill method ──────────────────────────────────────────────────────
 
-    def fill(self, case: SOPCase, on_status: Optional[Callable[[str, str], None]] = None) -> bool:
+    def fill(
+        self,
+        case: SOPCase,
+        on_status: Optional[Callable[[str, str], None]] = None,
+        display_id: int | None = None,
+    ) -> bool:
         t_start = time.perf_counter()
+        d_id = display_id if display_id is not None else self._cfg.get_active_display()
 
-        # Nha cac phim modifier (Alt, Ctrl, Shift) de Windows khong hieu nham la Alt+Click
+        # Nhả các phím modifier (Alt, Ctrl, Shift)
         time.sleep(0.003)
         ctypes.windll.user32.keybd_event(0x12, 0, 2, 0)  # VK_MENU (Alt) UP
         ctypes.windll.user32.keybd_event(0x11, 0, 2, 0)  # VK_CONTROL UP
         ctypes.windll.user32.keybd_event(0x10, 0, 2, 0)  # VK_SHIFT UP
         time.sleep(0.003)
 
-        if on_status:
-            on_status("busy", f"Đang điền: {case.name}")
+        coords = self._cfg.get_form_coords(d_id)
+        if not self._cfg.is_calibrated(d_id):
+            err_msg = f"Màn hình {d_id} chưa calibrate! Chạy: python sop_main.py calibrate --display {d_id}"
+            print(f"\n[SOP] ❌ {err_msg}\n")
+            if on_status:
+                on_status("error", f"Màn {d_id} chưa Calibrate!")
+            return False
 
-        coords = self._cfg.form_coords
-        print(f"\n[SOP] >>> {case.name}")
+        if on_status:
+            on_status("busy", f"Màn {d_id}: {case.name}")
+
+        print(f"\n[SOP] >>> [MÀN HÌNH {d_id}] {case.name}")
 
         try:
-            # Dam bao Teleops co focus truoc khi click
-            self._ensure_window_focus()
+            self._ensure_window_focus(coords)
 
-            # ── Vision Functionality (single-select) ──────────────────────────
+            # ── Vision Functionality ──────────────────────────────────────────
             if case.vision_functionality:
                 if on_status:
-                    on_status("detail", f"Vision: {case.vision_functionality}")
+                    on_status("detail", f"[Màn {d_id}] Vision: {case.vision_functionality}")
                 print(f"[SOP]  Vision  : {case.vision_functionality}")
                 self._select_single(
                     "vision_functionality",
                     coords["vision_functionality"],
                     case.vision_functionality,
+                    display_id=d_id,
                 )
 
-            # ── Actions Required (multi-select, ESC de dong) ──────────────────
+            # ── Actions Required ──────────────────────────────────────────────
             if case.actions_required:
                 opts = case.actions_required if isinstance(case.actions_required, list) \
                        else [case.actions_required]
                 if on_status:
-                    on_status("detail", f"Actions: {', '.join(opts)}")
+                    on_status("detail", f"[Màn {d_id}] Actions: {', '.join(opts)}")
                 print(f"[SOP]  Actions : {', '.join(opts)}")
                 self._select_multi(
                     "actions_required",
                     coords["actions_required"],
                     opts,
+                    display_id=d_id,
                 )
 
-            # ── Maintenance Issues (multi-select, ESC de dong) ────────────────
+            # ── Maintenance Issues ────────────────────────────────────────────
             if case.maintenance_issues:
                 if on_status:
-                    on_status("detail", f"Maint: {case.maintenance_issues}")
+                    on_status("detail", f"[Màn {d_id}] Maint: {case.maintenance_issues}")
                 print(f"[SOP]  Maint   : {case.maintenance_issues}")
                 self._select_multi(
                     "maintenance_issues",
                     coords["maintenance_issues"],
                     [case.maintenance_issues],
+                    display_id=d_id,
                 )
 
-            # ── Resolution (single-select) ────────────────────────────────────
+            # ── Resolution ────────────────────────────────────────────────────
             if case.resolution:
                 if on_status:
-                    on_status("detail", f"Resol: {case.resolution}")
+                    on_status("detail", f"[Màn {d_id}] Resol: {case.resolution}")
                 print(f"[SOP]  Resol   : {case.resolution}")
                 self._select_single(
                     "resolution",
                     coords["resolution"],
                     case.resolution,
+                    display_id=d_id,
                 )
 
             # ── Comment ───────────────────────────────────────────────────────
             if case.comment:
                 if on_status:
-                    on_status("detail", f"Comment: {case.comment}")
+                    on_status("detail", f"[Màn {d_id}] Comment: {case.comment}")
                 print(f"[SOP]  Comment : {case.comment}")
-                self._fill_comment(case.comment)
+                self._fill_comment(case.comment, coords)
 
             t_elapsed = time.perf_counter() - t_start
-            print(f"[SOP] DONE in {t_elapsed:.2f}s: {case.name}\n")
+            print(f"[SOP] DONE (Màn {d_id}) in {t_elapsed:.2f}s: {case.name}\n")
             if on_status:
-                on_status("done", f"Hoàn tất ({t_elapsed:.2f}s): {case.name}")
+                on_status("done", f"Màn {d_id} hoàn tất ({t_elapsed:.2f}s)")
             return True
 
         except Exception as e:
-            print(f"[SOP] ERROR: {e}\n")
+            print(f"[SOP] ERROR (Màn {d_id}): {e}\n")
             if on_status:
                 on_status("error", f"Lỗi: {e}")
             return False
 
 
 # =============================================================================
-# STANDALONE HOTKEY MANAGER (Win32 — ho tro ca Left Alt va Right Alt)
+# STANDALONE HOTKEY MANAGER (Win32)
 # =============================================================================
 
 WM_HOTKEY = 0x0312
 
-# Win32 modifier flags
 MOD_NONE  = 0x0000
 MOD_ALT   = 0x0001
 MOD_CTRL  = 0x0002
@@ -507,6 +486,7 @@ _VK_MAP: dict[str, int] = {
     "f5":  0x74, "f6":  0x75, "f7":  0x76, "f8":  0x77,
     "f9":  0x78, "f10": 0x79, "f11": 0x7A, "f12": 0x7B,
     "esc": 0x1B, "escape": 0x1B,
+    "tab": 0x09,
     "space": 0x20, "enter": 0x0D,
     "insert": 0x2D, "ins": 0x2D,
     "home": 0x24,
@@ -526,13 +506,6 @@ _MOD_MAP: dict[str, int] = {
 
 
 def _parse_key(combo: str) -> tuple[int, int]:
-    """
-    Phan tich chuoi hotkey, tra ve (fsModifiers, vk).
-    Vi du:
-      "insert"       -> (MOD_NONE, 0x2D)
-      "home"         -> (MOD_NONE, 0x24)
-      "alt+f5"       -> (MOD_ALT, 0x74)
-    """
     parts = [p.strip().lower() for p in combo.split("+")]
     mods = MOD_NONE
     vk   = None
@@ -545,10 +518,9 @@ def _parse_key(combo: str) -> tuple[int, int]:
 
 
 class SOPHotkeyThread(threading.Thread):
-    """Win32 hotkey listener — doc lap, ho tro AltGr va modifier kep."""
+    """Win32 hotkey listener."""
 
     def __init__(self, hotkeys: dict[int, tuple[int, int, Callable]]) -> None:
-        """hotkeys: {id: (fsModifiers, vk, callback)}"""
         super().__init__(daemon=True, name="SOPHotkeyThread")
         self._hotkeys = hotkeys
         self._running = True
@@ -582,23 +554,27 @@ class SOPHotkeyThread(threading.Thread):
 
 class SOPHotkeyManager:
     """
-    Quan ly hotkey rieng cho SOP tool.
-    Ho tro ca phim don (Insert, Home, PageUp, PageDown) va to hop phim.
+    Quản lý hotkey riêng cho SOP tool.
+    Hỗ trợ các phím đơn (Insert, Home, PageUp, PageDown, End), phím chuyển màn hình (F6), và tổ hợp.
     """
 
-    def __init__(self, cfg, on_trigger_case: Optional[Callable[[str], None]] = None) -> None:
-        """cfg: SOPConfig instance"""
+    def __init__(
+        self,
+        cfg,
+        on_trigger_case: Optional[Callable[[str], None]] = None,
+        on_toggle_display: Optional[Callable[[], None]] = None,
+    ) -> None:
         self._cfg = cfg
         self._filler = SOPFormFiller(cfg)
         self._hk_cfg = cfg.hotkeys_cfg
         self._on_trigger_case = on_trigger_case
+        self._on_toggle_display = on_toggle_display
         self._thread: Optional[SOPHotkeyThread] = None
         self._busy = False
         self._lock = threading.Lock()
         self._exit_requested = False
 
     def start(self) -> None:
-        """Kiem tra calibration, dang ky hotkeys va bat dau listen."""
         self._filler.warmup()
 
         hotkeys: dict[int, tuple[int, int, Callable]] = {}
@@ -611,11 +587,9 @@ class SOPHotkeyManager:
             mods, vk = _parse_key(combo)
             if vk:
                 cb = self._make_callback(case_key, case)
-                # Dang ky to hop goc
                 hotkeys[hk_id] = (mods, vk, cb)
                 hk_id += 1
 
-                # Neu co modifier Alt, dang ky them Alt + Ctrl (AltGr)
                 if mods & MOD_ALT:
                     hotkeys[hk_id] = (mods | MOD_CTRL, vk, cb)
                     hk_id += 1
@@ -625,8 +599,17 @@ class SOPHotkeyManager:
 
                 print(f"[SOP HK] {display:14} -> {case.name}")
 
-        # Exit hotkey (KHONG dang ky 'esc' don le de khong chiem phim ESC cua he thong / Teleops)
-        exit_combo   = self._hk_cfg.get("exit", "ctrl+esc")
+        # Hotkey chuyển đổi màn hình (Toggle Display)
+        if self._on_toggle_display:
+            toggle_combo = self._hk_cfg.get("toggle_display", "f6")
+            t_mods, t_vk = _parse_key(toggle_combo)
+            if t_vk:
+                hotkeys[hk_id] = (t_mods, t_vk, self._on_toggle_display)
+                hk_id += 1
+                print(f"[SOP HK] {toggle_combo.upper():14} -> Chuyển đổi Màn 1 <-> Màn 2")
+
+        # Exit hotkey
+        exit_combo = self._hk_cfg.get("exit", "ctrl+esc")
         exit_mods, exit_vk = _parse_key(exit_combo)
         if exit_vk and (exit_mods != MOD_NONE or exit_vk != 0x1B):
             hotkeys[hk_id] = (exit_mods, exit_vk, self._on_exit)
@@ -641,7 +624,7 @@ class SOPHotkeyManager:
             else:
                 with self._lock:
                     if self._busy:
-                        print("[SOP] Dang ban dien form, bo qua...")
+                        print("[SOP] Đang bận điền form, bỏ qua...")
                         return
                     self._busy = True
                 try:
@@ -659,8 +642,5 @@ class SOPHotkeyManager:
             self._thread.join(timeout=2.0)
 
     def wait_for_exit(self) -> None:
-        """Block cho den khi user nhan ESC."""
         while not self._exit_requested:
             time.sleep(0.2)
-
-

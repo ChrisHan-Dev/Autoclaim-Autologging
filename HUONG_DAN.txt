@@ -150,4 +150,32 @@ XỬ LÝ CÁC LỖI THƯỜNG GẶP
 3. Lỗi: Click lệch nút hoặc click trượt.
    -> Nguyên nhân: Cửa sổ Teleops GUI bị di chuyển hoặc thay đổi kích thước so với lúc hiệu chuẩn.
    -> Cách sửa: Bật lại lệnh `python main.py calibrate` để vẽ lại toạ độ.
+
 ================================================================================
+  HƯỚNG DẪN SỬ DỤNG TOOL SOP AUTO-LOGGING (HỖ TRỢ ĐA MÀN HÌNH)
+================================================================================
+Tool `sop_main.py` chạy độc lập để tự động điền form "Logging SOP (SUSPECT)".
+Số thứ tự màn hình khớp chính xác 100% với số hiển thị trong Windows Display Settings.
+
+1. Hiệu chuẩn toạ độ (Calibrate):
+   - Cho Màn 4 (Màn chính - Main Display):
+     python sop_main.py calibrate --display 4
+     python sop_main.py calibrate_options --display 4
+   - Cho Màn 3 (Màn phụ bên phải):
+     python sop_main.py calibrate --display 3
+     python sop_main.py calibrate_options --display 3
+
+2. Khởi động Tool:
+   python sop_main.py
+   (Hoặc click đúp file Run_SOP_Admin.bat)
+
+3. Điều khiển trên Popup HUD & Bàn phím:
+   - F6: Chuyển đổi qua lại giữa Màn 4 (Main) <-> Màn 3 (hoặc click nút trên Popup HUD)
+   - INSERT   : Điền Case 1 (All cameras / Align+Extract / Successful)
+   - HOME     : Điền Case 2 (No cameras / No action forced / Unsuccessful)
+   - PAGE UP  : Điền Case 3 (All cameras / No action forced / Not pickable / Unsuccessful)
+   - PAGE DOWN: Điền Case 4 (All cameras / Align+Extract / Damaged case / CHD with payload)
+   - END      : Điền Case 5 (All cameras / No action / No case / Successful)
+   - Ctrl + ESC: Thoát chương trình.
+================================================================================
+
