@@ -30,6 +30,7 @@
     "case_2": "home",
     "case_3": "pageup",
     "case_4": "pagedown",
+    "case_5": "end",
     "exit": "ctrl+esc"
   },
   "mouse": {
@@ -72,6 +73,6 @@
       "row_height": 25
     }
   },
-  "hud_x": 1053,
-  "hud_y": -316
+  "hud_x": 951,
+  "hud_y": -372
 }

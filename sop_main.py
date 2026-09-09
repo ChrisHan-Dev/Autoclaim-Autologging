@@ -161,8 +161,8 @@ Vi du:
         "--case",
         type=int,
         default=1,
-        choices=[1, 2, 3, 4],
-        help="So thu tu case muon test (1-4, mac dinh: 1)",
+        choices=[1, 2, 3, 4, 5],
+        help="So thu tu case muon test (1-5, mac dinh: 1)",
     )
     args = parser.parse_args()
 
@@ -295,6 +295,7 @@ Vi du:
     print("      HOME     -> Case 2 (No cam / No action / Unsuccessful)")
     print("      PAGE UP  -> Case 3 (All cam / Not pickable)")
     print("      PAGE DN  -> Case 4 (All cam / Align+Ext / CHD)")
+    print("      END      -> Case 5 (All cam / No action / No case / Success)")
     print("      (Hoặc click trực tiếp các nút trên Popup HUD)")
     print("      Đóng Popup HUD hoặc Ctrl+C để thoát.\n")
 

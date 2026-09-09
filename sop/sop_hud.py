@@ -43,7 +43,7 @@ class SOPStatusHUD:
     """
 
     WINDOW_WIDTH = 310
-    WINDOW_HEIGHT = 240
+    WINDOW_HEIGHT = 280
 
     def __init__(self, cfg, on_trigger_case: Callable[[str], None], on_exit: Callable[[], None]) -> None:
         self.cfg = cfg
@@ -214,6 +214,7 @@ class SOPStatusHUD:
             ("f2", "Case 2", "Home",   "No cam / No action / Unsuccessful"),
             ("f3", "Case 3", "PgUp",   "All cam / Not pickable"),
             ("f4", "Case 4", "PgDn",   "All cam / Align+Ext / CHD"),
+            ("f5", "Case 5", "End",    "All cam / No action / No case / Success"),
         ]
 
         for case_key, label_main, key_hint, subtitle in case_defs:
@@ -266,7 +267,7 @@ class SOPStatusHUD:
         footer = tk.Frame(root, bg=_C["bg"], height=16)
         footer.pack(fill="x", side="bottom", pady=(0, 2))
         tk.Label(
-            footer, text="Bấm nút trên hoặc phím Insert/Home/PgUp/PgDn | ESC để thoát",
+            footer, text="Bấm nút trên hoặc phím Insert/Home/PgUp/PgDn/End | ESC để thoát",
             bg=_C["bg"], fg=_C["fg_dim"], font=("Segoe UI", 7)
         ).pack(expand=True)
 

@@ -188,6 +188,16 @@ SOP_CASES: dict[str, SOPCase] = {
         comment              = "",
     ),
 
+    # ── Case 5 (F5) ── All cameras / No action-forced / No case / Successful
+    "f5": SOPCase(
+        name                 = "Case 5 - All cam / No action / No case / Successful",
+        vision_functionality = VisionFunctionality.ALL_CAMERAS,
+        actions_required     = ActionsRequired.NO_ACTION_FORCED,
+        maintenance_issues   = MaintenanceIssues.NO_CASE,
+        resolution           = Resolution.SUCCESSFUL,
+        comment              = "",
+    ),
+
 }
 
 
