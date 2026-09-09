@@ -1,0 +1,108 @@
+{
+  "monitor_index": 3,
+  "table_region": {
+    "left": 52,
+    "top": 604,
+    "width": 1489,
+    "height": 293
+  },
+  "site_column": {
+    "left": 498,
+    "top": 603,
+    "width": 151,
+    "height": 291
+  },
+  "type_column": {
+    "left": 201,
+    "top": 602,
+    "width": 150,
+    "height": 293
+  },
+  "alarm_column": {
+    "left": 943,
+    "top": 603,
+    "width": 151,
+    "height": 291
+  },
+  "claim_column": {
+    "left": 1091,
+    "top": 601,
+    "width": 151,
+    "height": 296
+  },
+  "select_column": {
+    "left": 1240,
+    "top": 603,
+    "width": 150,
+    "height": 293
+  },
+  "connect_button": {
+    "x": 773,
+    "y": 125
+  },
+  "username": "phan",
+  "site_blocklist": [],
+  "allowed_teleop_types": [
+    "CHRF"
+  ],
+  "max_alarm_time": "4:00",
+  "pending_keywords": [
+    "claiming",
+    "aiming",
+    "laiming",
+    "clalming"
+  ],
+  "pending_match_threshold": 85,
+  "ocr": {
+    "languages": [
+      "en"
+    ],
+    "gpu": false,
+    "confidence_threshold": 0.4,
+    "claim_keyword": "CLAIM",
+    "cache_identical_frames": true
+  },
+  "timing": {
+    "loop_interval_ms": 100,
+    "post_click_wait_ms": 300,
+    "post_connect_wait_ms": 1000,
+    "claim_timeout_s": 5,
+    "state_timeout_s": 10,
+    "debounce_ms": 300,
+    "claim_click_timeout_s": 5,
+    "post_select_wait_ms": 1000
+  },
+  "mouse": {
+    "move_duration_s": 0.15,
+    "randomize_offset_px": 3,
+    "failsafe": true
+  },
+  "row_detection": {
+    "method": "horizontal_lines",
+    "min_row_height_px": 15,
+    "max_row_height_px": 60,
+    "line_thickness_threshold": 1,
+    "use_template_matching": false,
+    "template_select_btn": "automation/templates/select_btn.png",
+    "template_confidence": 0.8
+  },
+  "debug": {
+    "enabled": false,
+    "overlay_alpha": 0.6,
+    "show_fps": true,
+    "show_ocr_boxes": true,
+    "show_row_boxes": true,
+    "show_state": true,
+    "save_screenshots_on_error": true
+  },
+  "logging": {
+    "level": "INFO",
+    "log_dir": "automation/logs",
+    "screenshot_dir": "automation/screenshots",
+    "max_log_files": 7,
+    "max_log_size_mb": 10
+  },
+  "_comment": "Run 'python main.py calibrate' to interactively set all regions/buttons.",
+  "status_window_x": 1035,
+  "status_window_y": 99
+}

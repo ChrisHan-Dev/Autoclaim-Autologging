@@ -1,0 +1,77 @@
+{
+  "form_coords": {
+    "vision_functionality": {
+      "x": 252,
+      "y": 638
+    },
+    "actions_required": {
+      "x": 256,
+      "y": 684
+    },
+    "maintenance_issues": {
+      "x": 260,
+      "y": 722
+    },
+    "resolution": {
+      "x": 254,
+      "y": 769
+    },
+    "comment": {
+      "x": 267,
+      "y": 815
+    },
+    "send_button": {
+      "x": 339,
+      "y": 896
+    }
+  },
+  "hotkeys": {
+    "case_1": "insert",
+    "case_2": "home",
+    "case_3": "pageup",
+    "case_4": "pagedown",
+    "exit": "ctrl+esc"
+  },
+  "mouse": {
+    "move_duration_s": 0.02,
+    "randomize_offset_px": 0
+  },
+  "timing": {
+    "click_delay_s": 0.03,
+    "dropdown_delay_s": 0.12,
+    "option_delay_s": 0.03,
+    "type_interval_s": 0.02
+  },
+  "ocr": {
+    "gpu": false,
+    "confidence_threshold": 0.4
+  },
+  "logging": {
+    "level": "INFO",
+    "log_dir": "sop/logs"
+  },
+  "dropdown_geometry": {
+    "vision_functionality": {
+      "first_option_x": 305,
+      "first_option_y": 641,
+      "row_height": 19
+    },
+    "actions_required": {
+      "first_option_x": 206,
+      "first_option_y": 702,
+      "row_height": 21
+    },
+    "maintenance_issues": {
+      "first_option_x": 230,
+      "first_option_y": 745,
+      "row_height": 20
+    },
+    "resolution": {
+      "first_option_x": 239,
+      "first_option_y": 765,
+      "row_height": 25
+    }
+  },
+  "hud_x": 1053,
+  "hud_y": -316
+}
