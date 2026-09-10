@@ -1,0 +1,15 @@
+# ============================================================
+# SOP Auto-Logging — Lightweight Dependencies
+# ============================================================
+# Cực kỳ nhẹ, cài đặt chỉ mất 5 giây!
+# KHÔNG CẦN EasyOCR, PyTorch hay OpenCV.
+# Tương thích: Python 3.10 – 3.14 (Khuyến nghị 3.12 - 3.14)
+#
+# Cách cài đặt:
+#   pip install -r auto_logging/requirements.txt
+# Hoặc click đúp file:
+#   Install_AutoLogging.bat
+# ============================================================
+
+pyautogui>=0.9.54
+Pillow>=10.0.0

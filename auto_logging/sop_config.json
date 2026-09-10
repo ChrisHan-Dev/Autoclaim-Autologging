@@ -75,14 +75,14 @@
       "row_height": 25
     }
   },
-  "hud_x": 1155,
-  "hud_y": 194,
-  "active_display": 4,
+  "hud_x": 914,
+  "hud_y": 298,
+  "active_display": 3,
   "active_pair": [
     4,
     3
   ],
-  "active_sop_type": "CHRF",
+  "active_sop_type": "SUSPECT",
   "displays": {
     "4": {
       "name": "Màn hình 4 (Main)",

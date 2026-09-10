@@ -1,233 +1,193 @@
-# Teleops GUI Automation Tool
+# 🤖 Teleops Automation Suite
 
-A standalone Python desktop automation tool that monitors the **Teleops GUI** application and automatically claims available bot rows — using only screen capture, OCR, and mouse control. No source code access, no DLL injection, no reverse engineering.
+A dual-purpose automation suite designed for Symbotic Teleops operators:
 
----
-
-## Features
-
-| Feature | Details |
-|---------|---------|
-| **Screen capture** | MSS partial-screen capture, < 10 ms per frame |
-| **OCR** | EasyOCR on CLAIM column only, < 70 ms |
-| **Row detection** | OpenCV horizontal projection + colour-change fallback |
-| **FSM** | 10-state finite state machine with validated transitions |
-| **Safety** | Debounce, click TTL, FAILSAFE — no spam clicks |
-| **Debug overlay** | Live HUD: rows, OCR boxes, state, FPS |
-| **Logging** | Rotating text log + JSON Lines event log |
-| **Calibration** | Drag-to-select GUI overlay for region setup |
+1. **⚡ SOP Auto-Logging** — Lightning-fast auto-fill for "Logging SOP" forms (Multi-Display, SUSPECT & CHRF modes, Quick Clipboard). Zero AI/heavy dependencies — **installs in 5 seconds!**
+2. **🎯 Teleops Auto-Claim** — Automated bot row detection and claiming using screen capture & OCR.
 
 ---
 
-## Quick Start
+## 🧭 Choose Your Tool
 
-### 1. Install dependencies
+| Tool | Purpose | Setup Time | Key Dependencies | Quick Launcher |
+| :--- | :--- | :---: | :--- | :--- |
+| **[1. SOP Auto-Logging](#-part-1-sop-auto-logging-standalone)** | Tự động điền form SOP sau khi xử lý Bot | **~5 seconds** | `pyautogui`, `Pillow` | `Run_SOP_Admin.bat` |
+| **[2. Teleops Auto-Claim](#-part-2-teleops-auto-claim)** | Tự động quét & nhận Bot trên bảng danh sách | **~1-2 minutes** | `easyocr`, `opencv`, `mss` | `Run_AutoClaim_Admin.bat` |
 
+---
+
+## ⚡ PART 1: SOP Auto-Logging (Standalone)
+
+Used to auto-fill the Teleops **"Logging SOP"** form in under 0.3 seconds. Position-based, supports multiple monitors (Monitor 4 Main & Monitor 3), and features a floating HUD with dropdown type switching.
+
+### 1. Quick Installation (Snap a finger!)
+
+Only requires `pyautogui` and `Pillow`.
+
+* **Option A (1-Click):** Double-click `Install_AutoLogging.bat`.
+* **Option B (Terminal):**
+  ```bash
+  pip install -r auto_logging/requirements.txt
+  ```
+
+> 💡 **Tip:** If you double-click `Run_SOP_Admin.bat` directly, it will even auto-detect missing libraries and install them for you automatically!
+
+### 2. How to Run
+
+* **Method 1 (Recommended):** Double-click `Run_SOP_Admin.bat` (launches with Administrator privileges).
+* **Method 2:**
+  ```bash
+  python sop_main.py
+  ```
+
+### 3. Screen Calibration (One-time setup per display)
+
+SOP Auto-Logging supports both **Monitor 4 (Main)** and **Monitor 3 (Secondary)**:
+
+#### Step 3.1: Calibrate Form Coordinates (Center of the 6 fields)
 ```bash
-pip install -r requirements.txt
+python sop_main.py calibrate --display 4      # For Main Monitor 4
+python sop_main.py calibrate --display 3      # For Secondary Monitor 3
+```
+Click the center of: `Vision Functionality` -> `Actions Required` -> `Maintenance Issues` -> `Resolution` -> `Comment` -> `SEND`.
+
+#### Step 3.2: Calibrate Dropdown Options
+```bash
+python sop_main.py calibrate_options --display 4   # For Monitor 4
+python sop_main.py calibrate_options --display 3   # For Monitor 3
 ```
 
-> **Note:** EasyOCR will download its model (~100 MB) on first run. This is cached in `~/.EasyOCR`.
+> 🌟 **Alt+Tab Pro-Tip (Prevent mouse shift):**
+> 1. Click a dropdown on the SOP form so the menu expands.
+> 2. Hover your mouse over the target option (**DO NOT click**).
+> 3. While keeping your hand steady on the mouse, press **`Alt + Tab`** on your keyboard to focus the CMD window.
+> 4. Press **`ENTER`** in the CMD window. The pixel coordinate is recorded with 100% precision!
 
-### 2. (Optional) GPU acceleration
+### 4. Hotkeys & SOP Types
 
-If you have an NVIDIA GPU:
+The floating HUD has a **Dropdown** to switch between **`SUSPECT`** and **`CHRF`**. Both types use the **exact same keys**:
 
-```bash
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
-```
+| Hotkey | [SUSPECT] Case | [CHRF] Case |
+| :---: | :--- | :--- |
+| **`INSERT`** | Case 1: All cam / Align + Extract / Success | Case 1: All cam / Align + Place / Success |
+| **`HOME`** | Case 2: No cam / No action / Unsuccessful | Case 2: All cam / Home actuator / Success |
+| **`PAGE UP`** | Case 3: All cam / Not pickable / Unsuccessful | Case 3: All cam / Home + Align + Place / Success |
+| **`PAGE DOWN`** | Case 4: All cam / Align + Ext / CHD (with payload) | Case 4: All cam / Home / Axes not resp / CHD (no payload) |
+| **`END`** | Case 5: All cam / No case / Success | Case 5: All cam / Home / Sensor malf / CHD (no payload) |
+| **`DELETE`** | Case 6: All cam / Rogue case / CHD (with payload) | Case 6: All cam / Align + Ext / Damaged / CHD (with payload) |
+| **`F6`** | Toggle active monitor: **Monitor 4 (Main)** $\leftrightarrow$ **Monitor 3** | Same |
+| **`Ctrl+ESC`** | Exit tool | Same |
 
-Then set `"gpu": true` in `config.json` under `"ocr"`.
+### 5. Quick Clipboard
 
-### 3. Set your username
+At the bottom of the HUD, 8 pre-configured error keywords are available. Simply **click any keyword button** to copy it instantly to your clipboard:
+* `bh_damage_case_on_payload`
+* `bh_rogue_case_on_payload`
+* `bh_debris_on_payload`
+* `bh_tape_on_actuator`
+* `bh_coh_fail`
+* `bh_actuator_stuck`
+* `bh_lift_tilts`
+* `bh_bot_damaged`
 
-Open `config.json` and change:
+---
+
+## 🎯 PART 2: Teleops Auto-Claim
+
+Monitors the Teleops bot list table, detects available `CLAIM` rows using OCR, confirms your username, selects the row, and connects to the bot.
+
+### 1. Installation
+
+Requires OCR and vision dependencies (`easyocr`, `opencv-python`, `mss`, `rapidfuzz`).
+
+* **Option A (1-Click):** Double-click `Install_AutoClaim.bat`.
+* **Option B (Terminal):**
+  ```bash
+  pip install -r auto_claim/requirements.txt
+  ```
+
+> **Note:** EasyOCR will download its language recognition model (~100 MB) on first launch.
+
+### 2. Configuration (`auto_claim/config.json`)
+
+Open [auto_claim/config.json](file:///c:/Users/SYMBOTIC/Documents/Automation/auto_claim/config.json) and configure:
 
 ```json
-"username": "YOUR_USERNAME_HERE"
+{
+  "username": "YOUR_TELEOPS_USERNAME",
+  "allowed_teleop_types": ["SUSPECT", "CHRF"],
+  "site_blocklist": []
+}
 ```
 
-to your actual Teleops username (the text that appears in the CLAIM cell after a successful claim).
-
-### 4. Calibrate screen regions
+### 3. Calibrate Table Regions
 
 ```bash
 python main.py calibrate
 ```
+A semi-transparent overlay will appear. Follow the prompts:
+1. Drag-select the **Bot Table region**.
+2. Drag-select the **CLAIM column**.
+3. Drag-select the **TELEOP TYPE column** (containing SUSPECT / CHRF).
+4. Drag-select the **SELECT button column**.
+5. Click the **CONNECT button**.
 
-A semi-transparent overlay opens. Follow the on-screen instructions to drag-select:
-1. The **table region** (the entire bot list)
-2. The **CLAIM column** (the column showing "CLAIM" text)
-3. The **SELECT column** (the column with Select buttons)
-4. **Click** the Connect button
+### 4. How to Run
 
-Results are saved to `config.json` automatically.
-
-### 5. Verify setup
-
-```bash
-python main.py status
-```
-
-### 6. Run the automation
-
-```bash
-python main.py run
-```
-
-With debug overlay:
-
-```bash
-python main.py run --debug
-# or
-python main.py debug
-```
+* **Method 1 (Recommended):** Double-click `Run_AutoClaim_Admin.bat`.
+* **Method 2:**
+  ```bash
+  python main.py
+  ```
+* **Controls:**
+  * **`F8`**: Start / Pause scanning for bots.
+  * **`F9`**: Exit tool.
 
 ---
 
-## Project Structure
+## 📁 Repository Structure
 
 ```
 Automation/
-├── auto_claim/                 # [1] Teleops Auto Claim Tool
-│   ├── __init__.py
-│   ├── main.py                 # Auto-claim entry point
-│   ├── config.json             # Runtime configuration
-│   ├── config.py               # ConfigManager — loads/saves config.json
-│   ├── capture.py              # ScreenCapture — MSS-based region capture
-│   ├── ocr.py                  # OCRReader — EasyOCR CLAIM column reader
-│   ├── vision.py               # ClaimDetector — row detection + button finding
-│   ├── clicker.py              # MouseController — safe debounced clicks
-│   ├── workflow.py             # WorkflowEngine — FSM automation loop
-│   ├── calibrate.py            # CalibrationTool — drag-to-select GUI setup
-│   ├── status_window.py        # StatusWindow — live status popup window
-│   ├── logger.py               # Logger — text + JSONL structured logs
-│   ├── logs/                   # Auto-created: daily rotating logs
-│   └── screenshots/            # Auto-created: error screenshots
+├── auto_logging/               # ⚡ Tool 1: SOP Auto-Logging
+│   ├── requirements.txt        # Lightweight dependencies (pyautogui, Pillow)
+│   ├── sop_main.py             # Entry point
+│   ├── sop_hud.py              # Floating HUD window with Dropdown & Clipboard
+│   ├── sop_logging.py          # Auto-fill logic (SUSPECT & CHRF cases)
+│   ├── sop_config.json         # Monitor coordinates & geometry
+│   ├── sop_config.py           # Config manager
+│   └── sop_calibrate.py        # Calibration tools (Form & Options)
 │
-├── auto_logging/               # [2] SOP Auto-Logging Tool (Multi-Display)
-│   ├── __init__.py
-│   ├── sop_main.py             # SOP logging entry point
-│   ├── sop_config.json         # SOP runtime configuration
-│   ├── sop_config.py           # SOP ConfigManager
-│   ├── sop_logging.py          # Core SOP auto-fill logic & Win32 hotkeys
-│   ├── sop_calibrate.py        # Calibration tools for SOP form & options
-│   ├── sop_hud.py              # Floating always-on-top HUD window
-│   └── sop_display.py          # Multi-display resolution helper
+├── auto_claim/                 # 🎯 Tool 2: Teleops Auto-Claim
+│   ├── requirements.txt        # Vision/OCR dependencies (easyocr, opencv, mss)
+│   ├── main.py                 # Entry point
+│   ├── config.json             # Configuration (username, regions)
+│   ├── config.py               # Config manager
+│   ├── capture.py              # Fast screen capture (<10ms)
+│   ├── ocr.py                  # EasyOCR text reader
+│   ├── vision.py               # Row & button detector
+│   ├── clicker.py              # Safe mouse controller
+│   └── workflow.py             # State machine engine
 │
-├── Run_AutoClaim_Admin.bat     # 1-Click launcher for Auto Claim (Admin)
-├── Run_SOP_Admin.bat           # 1-Click launcher for SOP Auto Logging (Admin)
-├── main.py                     # Root entry point wrapper -> auto_claim.main
-├── sop_main.py                 # Root entry point wrapper -> auto_logging.sop_main
-├── requirements.txt            # Python dependencies
-├── HUONG_DAN.txt               # Detailed Vietnamese guide
+├── Install_AutoLogging.bat     # 1-Click setup for Auto-Logging (~5s)
+├── Install_AutoClaim.bat       # 1-Click setup for Auto-Claim
+├── Run_SOP_Admin.bat           # 1-Click launcher for SOP Logging (Admin)
+├── Run_AutoClaim_Admin.bat     # 1-Click launcher for Auto-Claim (Admin)
+├── main.py                     # Root wrapper -> auto_claim.main
+├── sop_main.py                 # Root wrapper -> auto_logging.sop_main
+├── requirements.txt            # Complete package list
+├── HUONG_DAN.txt               # Complete Vietnamese guide
 └── README.md
 ```
 
 ---
 
-## Configuration Reference (`config.json`)
+## 🛠️ Troubleshooting
 
-| Key | Description | Default |
-|-----|-------------|---------|
-| `monitor_index` | MSS monitor index (1 = primary) | `1` |
-| `table_region` | Absolute screen rect of the bot table | calibrated |
-| `claim_column` | Absolute screen rect of the CLAIM column | calibrated |
-| `select_column` | Absolute screen rect of the SELECT column | calibrated |
-| `connect_button` | Absolute screen position of Connect button | calibrated |
-| `username` | Your Teleops username | **required** |
-| `ocr.gpu` | Use GPU for EasyOCR | `false` |
-| `ocr.confidence_threshold` | Minimum OCR confidence (0–1) | `0.4` |
-| `ocr.claim_keyword` | Text to match in CLAIM cell | `"CLAIM"` |
-| `timing.loop_interval_ms` | Main loop interval | `100` |
-| `timing.claim_timeout_s` | Max wait for claim confirmation | `5` |
-| `timing.debounce_ms` | Min time between any two clicks | `500` |
-| `debug.enabled` | Show debug overlay | `false` |
-| `row_detection.use_template_matching` | Use template image for Select btn | `false` |
-
----
-
-## Finite State Machine
-
-```
-IDLE
- │
- ▼
-SEARCHING ──── no CLAIM ──────────────────────────────── loop
- │ CLAIM found
- ▼
-CLAIM_FOUND
- │
- ▼
-CLICK_SELECT ─── click Select button
- │
- ▼
-WAIT_CLAIM ──── poll OCR for username ── timeout ──► TIMEOUT ──► ERROR ──► SEARCHING
- │ username confirmed
- ▼
-CLAIM_SUCCESS
- │
- ▼
-CLICK_CONNECT ─── click Connect button
- │
- ▼
-CONNECTED ──── wait 1s ──► SEARCHING
-```
-
----
-
-## Safety Features
-
-- **No double-click:** Click history with configurable TTL prevents re-clicking the same logical target.
-- **No premature Connect:** The FSM transition matrix makes it architecturally impossible to reach `CLICK_CONNECT` without passing through `CLAIM_SUCCESS`.
-- **Timeout recovery:** If OCR doesn't confirm a claim within `claim_timeout_s`, the engine logs a TIMEOUT and resumes scanning.
-- **Auto-recovery from errors:** The ERROR state automatically resets all state and resumes scanning after 2 seconds.
-- **pyautogui FAILSAFE:** Move the mouse to the **top-left corner** of the screen to immediately abort the automation.
-- **Ctrl-C:** Standard interrupt also cleanly shuts down.
-
----
-
-## Template Matching (optional)
-
-For higher Select button detection accuracy, screenshot the Select button and save it as:
-
-```
-automation/templates/select_btn.png
-```
-
-Then enable in `config.json`:
-
-```json
-"row_detection": {
-    "use_template_matching": true
-}
-```
-
----
-
-## Logs
-
-| File | Contents |
-|------|----------|
-| `auto_claim/logs/automation_YYYYMMDD.log` | Human-readable timestamped events |
-| `auto_claim/logs/events_YYYYMMDD.jsonl` | Machine-readable JSON Lines (one event per line) |
-| `auto_claim/screenshots/` | PNG snapshots saved on errors |
-
----
-
-## Troubleshooting
-
-| Problem | Solution |
-|---------|---------|
-| OCR misses CLAIM rows | Lower `ocr.confidence_threshold` (try `0.25`) |
-| Select button not found | Enable `use_template_matching` and provide `select_btn.png` |
-| Too slow / high CPU | Increase `loop_interval_ms` to `200` |
-| Calibration GUI won't open | Run `python main.py calibrate` from the normal Windows desktop (not SSH/headless) |
-| Claims stolen before click | Decrease `loop_interval_ms` to `50` |
-| Wrong row clicked | Recalibrate — ensure SELECT column rect aligns precisely |
-
----
-
-## License
-
-MIT — use freely for personal automation tasks.
+| Issue | Tool | Solution |
+| :--- | :--- | :--- |
+| **"No module named pyautogui"** | Auto-Logging | Run `Install_AutoLogging.bat` or `pip install -r auto_logging/requirements.txt` |
+| **"Failed to register hotkey"** | Both | Make sure no other instance of the tool is running in another CMD window. Always launch with Admin (`Run_SOP_Admin.bat`). |
+| **Mouse clicks wrong position** | Auto-Logging | Re-run calibration: `python sop_main.py calibrate --display <3|4>` and `calibrate_options`. |
+| **Bot not claiming** | Auto-Claim | Verify `"username"` matches your exact account name in `auto_claim/config.json`. |
+| **High CPU usage** | Auto-Claim | In `auto_claim/config.json`, set `"loop_interval_ms": 200`. |

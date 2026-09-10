@@ -1,296 +1,236 @@
 ================================================================================
-   HƯỚNG DẪN CHI TIẾT CÀI ĐẶT, HIỆU CHUẨN (CALIBRATE) & SỬ DỤNG BỘ TOOL TELEOPS
-   Bao gồm: [1] Auto Claim (Tự động nhận Bot) + [2] Auto Logging (SOP Đa Màn Hình)
+   HƯỚNG DẪN CHI TIẾT BỘ TOOL TỰ ĐỘNG TELEOPS (AUTO CLAIM & SOP AUTO-LOGGING)
 ================================================================================
 
-Tài liệu này được biên soạn chi tiết từng bước, giúp bất kỳ ai (dù chưa từng học lập 
-trình) cũng có thể tự cài đặt, hiệu chuẩn toạ độ chính xác 100% và vận hành bộ tool 
-mượt mà trên hệ điều hành Windows.
+Bộ công cụ được thiết kế độc lập, tối ưu hoá tối đa cho người dùng mới:
+
+  👉 BẠN CHỈ DÙNG SOP AUTO-LOGGING? (Cài đặt 5 giây - Siêu nhẹ):
+     Xem ngay: [PHẦN A] ở dưới! Click đúp `Install_AutoLogging.bat` là xong ngay.
+
+  👉 BẠN DÙNG AUTO-CLAIM NHẬN BOT? (Đầy đủ nhận diện hình ảnh & OCR):
+     Xem: [PHẦN B] ở dưới! Click đúp `Install_AutoClaim.bat`.
 
 ================================================================================
-PHẦN I: TỔNG QUAN HỆ THỐNG VÀ CẤU TRÚC THƯ MỤC
+CẤU TRÚC THƯ MỤC CỦA BỘ TOOL
 ================================================================================
-
-Bộ tool được chia thành 2 công cụ độc lập, gom gọn trong 2 thư mục riêng biệt:
 
 Automation/
 │
-├── auto_claim/                 --> [MỤC 1] CÔNG CỤ AUTO CLAIM (Tự động nhận bot)
-│   ├── config.json             --> File cấu hình (username, danh sách chặn, bộ lọc)
+├── auto_logging/               --> ⚡ [MỤC 1] CÔNG CỤ SOP AUTO-LOGGING (Siêu nhẹ)
+│   ├── requirements.txt        --> Chỉ cần pyautogui & Pillow (cài trong 5 giây)
+│   ├── sop_main.py             --> Mã nguồn chạy chính của SOP
+│   ├── sop_hud.py              --> Popup HUD nổi kèm Dropdown chọn loại & Quick Clipboard
+│   ├── sop_logging.py          --> Logic điền form (hỗ trợ cả SUSPECT và CHRF)
+│   ├── sop_config.json         --> File lưu toạ độ các màn hình đã calibrate
+│   ├── sop_config.py           --> Quản lý cấu hình SOP
+│   └── sop_calibrate.py        --> Công cụ calibrate Form và Options
+│
+├── auto_claim/                 --> 🎯 [MỤC 2] CÔNG CỤ AUTO CLAIM (Tự động nhận bot)
+│   ├── requirements.txt        --> Danh sách thư viện OCR & Vision (EasyOCR, OpenCV...)
+│   ├── config.json             --> File cấu hình (username, bộ lọc site, loại bot)
 │   ├── main.py                 --> Mã nguồn chạy chính của Auto Claim
 │   ├── calibrate.py            --> Công cụ kéo thả lấy toạ độ bảng Bot
-│   ├── workflow.py             --> Bộ máy điều khiển FSM thông minh
-│   ├── status_window.py        --> Cửa sổ Popup hiển thị trạng thái Auto Claim
-│   ├── logs/                   --> Nơi lưu file nhật ký hoạt động
-│   └── screenshots/            --> Nơi tự động lưu ảnh khi xảy ra lỗi
+│   ├── workflow.py             --> Bộ máy điều khiển FSM tự động
+│   └── status_window.py        --> Cửa sổ Popup trạng thái Auto Claim
 │
-├── auto_logging/               --> [MỤC 2] CÔNG CỤ AUTO LOGGING (SOP đa màn hình)
-│   ├── sop_config.json         --> File cấu hình toạ độ form & menu của các màn hình
-│   ├── sop_main.py             --> Mã nguồn chạy chính của SOP Logging
-│   ├── sop_calibrate.py        --> Công cụ hiệu chuẩn form & dropdown options
-│   ├── sop_hud.py              --> Bảng điều khiển Popup HUD nổi trên màn hình
-│   └── sop_display.py          --> Module hỗ trợ đa màn hình chuẩn Windows (1, 2, 3, 4)
-│
-├── Run_AutoClaim_Admin.bat     --> Click đúp 1-click chạy Auto Claim (Quyền Admin)
-├── Run_SOP_Admin.bat           --> Click đúp 1-click chạy Auto Logging (Quyền Admin)
-├── main.py                     --> File gọi nhanh Auto Claim từ thư mục gốc
-├── sop_main.py                 --> File gọi nhanh Auto Logging từ thư mục gốc
-├── requirements.txt            --> Danh sách các thư viện bổ trợ cần thiết
-└── HUONG_DAN.txt               --> File hướng dẫn chi tiết này
+├── Install_AutoLogging.bat     --> Click đúp 1-click cài đặt thư viện Auto-Logging (5 giây)
+├── Install_AutoClaim.bat       --> Click đúp 1-click cài đặt thư viện Auto-Claim (1-2 phút)
+├── Run_SOP_Admin.bat           --> Click đúp 1-click mở SOP Logging (Quyền Admin)
+├── Run_AutoClaim_Admin.bat     --> Click đúp 1-click mở Auto Claim (Quyền Admin)
+├── requirements.txt            --> Tổng hợp toàn bộ thư viện cho cả 2 công cụ
+├── README.md                   --> Tài liệu tổng quan (Tiếng Anh)
+└── HUONG_DAN.txt               --> Tài liệu hướng dẫn chi tiết này
 
 
 ================================================================================
-PHẦN II: CÀI ĐẶT BAN ĐẦU (CHỈ CẦN LÀM 1 LẦN DUY NHẤT TRÊN MÁY MỚI)
+PHẦN A: HƯỚNG DẪN CÔNG CỤ 1 — SOP AUTO-LOGGING (ĐIỀN FORM TỰ ĐỘNG)
 ================================================================================
-
-BƯỚC 1: TẢI VÀ CÀI ĐẶT PYTHON
---------------------------------------------------------------------------------
-1. Truy cập trang web chính thức: https://www.python.org/downloads/
-2. Tải phiên bản Python mới nhất (Python 3.12, 3.13 hoặc 3.14).
-3. Mở file cài đặt lên.
-4. [CỰC KỲ QUAN TRỌNG]: Tại màn hình đầu tiên, TÍCH CHỌN vào ô:
-   [X] "Add python.exe to PATH" (ở dưới cùng).
-   (Nếu quên tích ô này, máy tính sẽ báo lỗi không nhận diện được lệnh python).
-5. Bấm "Install Now" và chờ đến khi hoàn tất rồi bấm "Close".
-
-BƯỚC 2: MỞ TERMINAL (CMD) TẠI THƯ MỤC CHỨA TOOL
---------------------------------------------------------------------------------
-1. Mở File Explorer và vào thư mục `Automation`.
-2. Click chuột vào thanh địa chỉ ở trên cùng (thanh hiển thị đường dẫn thư mục).
-3. Xoá hết chữ đi, gõ `cmd` rồi nhấn phím Enter trên bàn phím.
-4. Cửa sổ Command Prompt màu đen sẽ xuất hiện tại đúng thư mục `Automation`.
-
-BƯỚC 3: CÀI ĐẶT CÁC THƯ VIỆN BỔ TRỢ (REQUIREMENTS)
---------------------------------------------------------------------------------
-Tại cửa sổ CMD vừa mở, gõ chính xác dòng lệnh sau rồi bấm Enter:
-
-    pip install -r requirements.txt
-
-* Chờ 1-2 phút cho máy tải xong toàn bộ thư viện (mss, opencv, easyocr, pyautogui, rapidfuzz).
-* Khi thấy dòng chữ "Successfully installed..." là đã hoàn thành.
-
-
-================================================================================
-PHẦN III: HƯỚNG DẪN SỬ DỤNG CÔNG CỤ 1 — AUTO CLAIM TELEOPS
-================================================================================
-
-1. CẤU HÌNH THÔNG TIN CÁ NHÂN (auto_claim/config.json)
---------------------------------------------------------------------------------
-1. Vào thư mục `Automation/auto_claim`, mở file `config.json` bằng Notepad.
-2. Kiểm tra và chỉnh sửa các mục sau:
-   - "username": "phan"
-     --> Thay bằng đúng tên tài khoản Teleops của bạn (giữ nguyên dấu ngoặc kép).
-   - "site_blocklist": []
-     --> Danh sách các site bạn muốn tránh/bỏ qua (ví dụ: ["RYM", "BCK"]).
-         Nếu muốn nhận mọi site thì để trống: `[]`.
-   - "allowed_teleop_types": ["SUSPECT", "CHRF"]
-     --> Các kiểu Teleop cho phép nhận (ví dụ chỉ nhận SUSPECT thì để `["SUSPECT"]`).
-   - "max_alarm_time": "10:00"
-     --> Thời gian báo động tối đa (MM:SS). Bot bị báo động lâu hơn mức này sẽ bị bỏ qua.
-3. Bấm Ctrl + S để lưu lại file và đóng Notepad.
-
-2. HIỆU CHUẨN TOẠ ĐỘ MÀN HÌNH AUTO CLAIM (CALIBRATE)
---------------------------------------------------------------------------------
-* Cần làm mỗi khi thay đổi vị trí, kích thước hoặc độ phân giải cửa sổ Teleops GUI.
-
-1. Mở ứng dụng Teleops GUI lên màn hình và để ở trạng thái sẵn sàng.
-2. Tại cửa sổ CMD, gõ lệnh:
-
-    python main.py calibrate
-
-3. Một lớp màn mờ bao phủ màn hình sẽ xuất hiện. Hãy đọc dòng chữ hướng dẫn màu đỏ 
-   ở góc trên bên trái và dùng chuột thực hiện đủ 7 bước:
-   - Bước 1/7: KÉO CHUỘT tạo hộp chữ nhật bao quanh toàn bộ vùng danh sách bảng Bot.
-   - Bước 2/7: KÉO CHUỘT chọn cột TELEOP TYPE (chứa chữ SUSPECT/CHRF/CAS_DRIVING).
-   - Bước 3/7: KÉO CHUỘT chọn cột SITE (chứa mã Site, vd: MRP, BRK).
-   - Bước 4/7: KÉO CHUỘT chọn cột ALARMED FOR (chứa thời gian báo động, vd: 02:14).
-   - Bước 5/7: KÉO CHUỘT chọn cột CLAIM (chứa chữ CLAIM hoặc tên người).
-   - Bước 6/7: KÉO CHUỘT chọn cột SELECT (chứa các nút Select).
-   - Bước 7/7: CLICK CHUỘT THẲNG VÀO CHÍNH GIỮA NÚT CONNECT CỐ ĐỊNH (nút to ở trên cùng).
-4. Sau khi click bước 7, lớp màn mờ tự đóng và toạ độ được lưu tự động vào `auto_claim/config.json`.
-
-3. KIỂM TRA TOẠ ĐỘ ĐÃ LƯU
---------------------------------------------------------------------------------
-Gõ lệnh sau vào CMD để kiểm tra toạ độ:
-
-    python main.py status
-
-Nếu thấy dòng `Calibrated: YES` cùng các toạ độ đầy đủ là đã sẵn sàng chạy!
-
-4. VẬN HÀNH AUTO CLAIM
---------------------------------------------------------------------------------
-Cách 1: Click đúp vào file `Run_AutoClaim_Admin.bat` ở thư mục gốc (Khuyên dùng).
-Cách 2: Gõ lệnh `python main.py` vào CMD.
-
-* CÁC PHÍM TẮT ĐIỀU KHIỂN AUTO CLAIM:
-  - Phím F8  : BẬT / TẮT quét (Trạng thái chuyển sang SCANNING / STOPPED).
-  - Phím F9  : DỪNG KHẨN CẤP ngay lập tức.
-  - Phím F10 : TẠM DỪNG / TIẾP TỤC quét.
-  - Phím ESC : THOÁT hoàn toàn chương trình.
-
-* QUY TRÌNH TỰ ĐỘNG CỦA TOOL:
-  1. Khi bấm F8, tool liên tục quét cột CLAIM để tìm ô có chữ "CLAIM".
-  2. Bỏ qua các dòng không nằm trong allowed_teleop_types hoặc thuộc site_blocklist.
-  3. Khi thấy dòng hợp lệ -> Tự động click vào ô CLAIM -> Đợi tên tài khoản của bạn xuất hiện.
-  4. Xác nhận tên thành công -> Tự động click nút Select của hàng đó -> Tự động click nút Connect.
-  5. Sau khi kết nối thành công 01 Bot duy nhất -> Tool tự động dừng quét (chuyển về STOPPED) 
-     để đảm bảo an toàn tuyệt đối, không nhận nhầm thêm bot khác.
-  6. Muốn nhận bot tiếp theo sau khi xử lý xong? Chỉ cần bấm phím F8 một lần nữa.
-
-
-================================================================================
-PHẦN IV: HƯỚNG DẪN SỬ DỤNG CÔNG CỤ 2 — SOP AUTO-LOGGING (ĐA MÀN HÌNH)
-================================================================================
-
-Công cụ SOP Auto-Logging chạy hoàn toàn độc lập, dùng để tự động điền form 
-"Logging SOP (SUSPECT)" nhanh như chớp (chưa tới 0.3 giây) bằng phím tắt hoặc Popup HUD.
-Hỗ trợ chuyển đổi qua lại giữa Màn hình 4 (Main) và Màn hình 3 (Phụ).
+Công cụ này chạy HOÀN TOÀN ĐỘC LẬP, không cần EasyOCR, PyTorch hay OpenCV nặng nề.
+Giúp điền form "Logging SOP" chỉ trong 0.3 giây bằng bàn phím hoặc Popup HUD.
 
 --------------------------------------------------------------------------------
-A. QUY TRÌNH HIỆU CHUẨN (CALIBRATE) SOP — KÈM MẸO ALT+TAB CHUẨN XÁC 100%
+A1. CÀI ĐẶT SIÊU TỐC (CHỈ MẤT 5 GIÂY)
 --------------------------------------------------------------------------------
+* Bước 1: Máy tính cần có sẵn Python 3.10 trở lên (khuyên dùng Python 3.12 - 3.14).
+  (Khi cài Python, hãy nhớ tích vào ô [X] "Add Python to PATH").
 
-Calibrate SOP gồm 2 công đoạn cho mỗi màn hình:
-  - Công đoạn 1: Calibrate Form (Lấy toạ độ tâm của 6 ô trên form)
-  - Công đoạn 2: Calibrate Dropdown Options (Lấy toạ độ các mục bên trong menu)
+* Bước 2: Cài đặt thư viện:
+  - Cách 1 (Khuyên dùng): Click đúp chuột vào file:
+      >>>  Install_AutoLogging.bat  <<<
+  - Cách 2 (Gõ lệnh CMD):
+      pip install -r auto_logging/requirements.txt
 
-----------------------------------------------------------------
-BƯỚC 1: CALIBRATE TÂM FORM SOP
-----------------------------------------------------------------
+> 💡 MẸO ĐẶC BIỆT: File `Run_SOP_Admin.bat` đã được tích hợp tính năng tự động kiểm tra!
+> Nếu máy bạn là máy mới toanh chưa cài gì, chỉ cần click đúp `Run_SOP_Admin.bat`, 
+> tool sẽ tự động cài đặt `pyautogui` trong 5 giây rồi mở giao diện ngay lập tức!
+
+--------------------------------------------------------------------------------
+A2. HIỆU CHUẨN TOẠ ĐỘ (CALIBRATE) TRÊN MÀN HÌNH CỦA BẠN (CHỈ CẦN LÀM 1 LẦN)
+--------------------------------------------------------------------------------
+Tool hỗ trợ độc lập cả Màn hình 4 (Main) và Màn hình 3 (Phụ).
+
+BƯỚC 1: CALIBRATE TÂM 6 Ô TRÊN FORM SOP
 * Lệnh cho Màn hình 4 (Màn chính):
     python sop_main.py calibrate --display 4
-
 * Lệnh cho Màn hình 3 (Màn phụ):
     python sop_main.py calibrate --display 3
 
-Cách thực hiện:
-1. Mở sẵn form "Logging SOP (SUSPECT)" trên màn hình tương ứng.
-2. Gõ lệnh trên và bấm Enter -> Một lớp màn mờ màu xanh sẽ hiện lên.
-3. Dùng chuột click lần lượt vào TÂM của 6 vị trí theo dòng chữ chỉ dẫn ở trên:
-   - Step 1/6: Click tâm ô [Vision Functionality]
-   - Step 2/6: Click tâm ô [Actions Required]
-   - Step 3/6: Click tâm ô [Maintenance Issues]
-   - Step 4/6: Click tâm ô [Resolution]
-   - Step 5/6: Click tâm ô [Comment]
-   - Step 6/6: Click tâm nút [SEND]
-4. Sau khi click đủ 6 bước, toạ độ form sẽ được lưu lại.
+Cách làm:
+1. Mở sẵn form "Logging SOP" trên màn hình tương ứng.
+2. Gõ lệnh trên -> Một lớp phủ màu xanh trong suốt hiện lên.
+3. Click chuột lần lượt vào TÂM của 6 mục:
+   - Step 1/6: Tâm ô [Vision Functionality]
+   - Step 2/6: Tâm ô [Actions Required]
+   - Step 3/6: Tâm ô [Maintenance Issues]
+   - Step 4/6: Tâm ô [Resolution]
+   - Step 5/6: Tâm ô [Comment]
+   - Step 6/6: Tâm nút [SEND]
 
-----------------------------------------------------------------
-BƯỚC 2: CALIBRATE DROPDOWN OPTIONS (VỊ TRÍ CÁC MỤC TRONG MENU)
-----------------------------------------------------------------
+BƯỚC 2: CALIBRATE CÁC MỤC DROPDOWN OPTIONS (KÈM MẸO VÀNG ALT+TAB)
 * Lệnh cho Màn hình 4:
     python sop_main.py calibrate_options --display 4
-
 * Lệnh cho Màn hình 3:
     python sop_main.py calibrate_options --display 3
 
-★ MẸO QUAN TRỌNG ĐỂ CHUỘT KHÔNG BỊ DI CHUYỂN / KHÔNG BỊ LỆCH TOẠ ĐỘ:
------------------------------------------------------------------
-Khi bạn di chuột đến ô menu trên form Teleops, nếu bạn di chuột ngược về cửa sổ 
-CMD để bấm chuột, con trỏ chuột sẽ bị kéo ra chỗ khác làm sai toạ độ. 
-HÃY ÁP DỤNG TUYỆT CHIÊU SAU:
-
-1. Dùng chuột click vào ô dropdown trên form SOP để BẢNG DANH SÁCH MỤC XỔ XUỐNG.
+★ TUYỆT CHIÊU ALT+TAB ĐỂ CHUỘT KHÔNG BỊ DI CHUYỂN / CHÍNH XÁC 100%:
+1. Dùng chuột click vào ô dropdown trên form SOP để menu xổ danh sách các mục xuống.
 2. RÊ CON TRỎ CHUỘT ĐẶT ĐÚNG LÊN DÒNG MỤC CẦN CHỈ (CHỈ ĐẶT CHUỘT LÊN, TUYỆT ĐỐI KHÔNG CLICK).
-3. [MẸO VÀNG]: GIỮ NGUYÊN TAY KHÔNG DI CHUYỂN CHUỘT, DÙNG BÀN PHÍM BẤM:
-   
-   >>> TỔ HỢP PHÍM:  Alt + Tab  <<<
+3. [MẸO VÀNG]: GIỮ NGUYÊN TAY ĐỂ CHUỘT ĐỨNG IM, BẤM TỔ HỢP PHÍM:
+      >>>  Alt + Tab  <<<
+   để chuyển vùng chọn về cửa sổ CMD mà chuột vẫn đứng im tại pixel của dòng option!
+4. Nhấn phím ENTER trên bàn phím. Toạ độ được ghi nhận chính xác từng pixel.
+5. Tiếp tục rê chuột đến mục tiếp theo -> Bấm Alt+Tab về CMD -> Nhấn Enter.
+6. Lặp lại cho 4 dropdown: Vision Functionality, Actions Required, Maintenance Issues, Resolution.
 
-   để chuyển vùng chọn (focus) về cửa sổ CMD / Terminal mà con trỏ chuột vẫn đứng im 
-   tại đúng pixel của dòng option trên màn hình!
-4. Nhấn phím ENTER trên bàn phím. Cửa sổ CMD sẽ ghi nhận toạ độ chuột chính xác 100%.
-5. Tiếp tục rê chuột xuống dòng option tiếp theo theo chỉ dẫn trên CMD -> bấm Alt+Tab 
-   về CMD -> nhấn ENTER.
-6. Lặp lại tương tự cho 4 menu: Vision Functionality, Actions Required, Maintenance Issues, Resolution.
-7. Khi hoàn thành, màn hình CMD sẽ thông báo thành công và lưu toạ độ vào `auto_logging/sop_config.json`.
+--------------------------------------------------------------------------------
+A3. VẬN HÀNH VÀ SỬ DỤNG SOP AUTO-LOGGING
+--------------------------------------------------------------------------------
+* Khởi động tool: Click đúp vào file `Run_SOP_Admin.bat` (hoặc gõ `python sop_main.py`).
 
-----------------------------------------------------------------
-BƯỚC 3: KIỂM TRA TOẠ ĐỘ SOP ĐÃ LƯU
-----------------------------------------------------------------
-Gõ lệnh:
+* GIAO DIỆN POPUP HUD ĐA NĂNG:
+  1. Thanh Màn hình: Bấm chọn `🖥️ MÀN 4` hoặc `🖥️ MÀN 3` (hoặc bấm phím F6 để đổi).
+  2. Thanh Loại SOP (Dropdown):
+     - Khi chọn [▼ SUSPECT (6 Cases)]: Bảng SUSPECT hiện lên và được lưu giữ nguyên ở đó.
+     - Khi chọn [▼ CHRF (6 Cases)]: Bảng SUSPECT tự đóng lại và chuyển sang bảng CHRF.
+     - Lựa chọn này được lưu vĩnh viễn trong file config, lần sau mở lên vẫn giữ nguyên.
+  3. Nút [▲ Đóng / ▼ Mở]: Thu gọn bảng Case bất cứ lúc nào để màn hình gọn gàng hơn.
 
-    python sop_main.py status
-
-Kiểm tra xem Màn hình 4 và Màn hình 3 đã hiện đầy đủ [OK] cho cả Form và Options hay chưa.
-
-----------------------------------------------------------------
-BƯỚC 4: VẬN HÀNH SOP AUTO-LOGGING
-----------------------------------------------------------------
-Cách 1: Click đúp vào file `Run_SOP_Admin.bat` ở thư mục gốc (Khuyên dùng).
-Cách 2: Gõ lệnh `python sop_main.py` vào CMD.
-
-* GIAO DIỆN & PHÍM TẮT ĐIỀU KHIỂN:
-  - Một cửa sổ Popup HUD nhỏ gọn màu đen xanh hiện lên góc màn hình (luôn nổi trên cùng, có thể kéo thả).
-  - Thanh chọn loại SOP (Dropdown):
-    + Mặc định hiển thị: [▼ SUSPECT (6 Cases)] và luôn giữ nguyên bảng SUSPECT để bạn làm việc.
-    + Khi cần log bot sạc CHRF: Click vào Dropdown -> Chọn [⚡ CHRF] -> Bảng SUSPECT sẽ tự đóng lại và chuyển sang bảng CHRF (4 Cases). Lựa chọn này được tự động ghi nhớ cho các lần chạy sau.
-    + Nút [▲ Đóng / ▼ Mở]: Cho phép bạn tuỳ ý thu gọn bảng Case nếu muốn tiết kiệm diện tích màn hình.
-  - Bạn có thể bấm nút trên Popup HUD hoặc bấm trực tiếp phím tắt trên bàn phím:
+* BẢNG PHÍM TẮT DÙNG CHUNG CHO CẢ 2 LOẠI:
+  (Bạn vẫn bấm CÙNG MỘT CỤM PHÍM QUEN THUỘC, tool tự điền đúng theo loại đang chọn!)
 
   ┌──────────────┬─────────────────────────────────────────────────────────────┐
-  │  PHÍM TẮT    │ CHỨC NĂNG ĐIỀN FORM (THEO LOẠI SOP ĐANG CHỌN)               │
+  │  PHÍM TẮT    │ KHI ĐANG Ở [SUSPECT]                                        │
   ├──────────────┼─────────────────────────────────────────────────────────────┤
-  │ F6           │ Đổi qua lại chế độ MÀN HÌNH 4 (Main) <-> MÀN HÌNH 3 (Phụ)   │
-  │              │                                                             │
-  │ [SUSPECT]    │                                                             │
   │ INSERT       │ Case 1: All cam / Align + Extract / Successful              │
   │ HOME         │ Case 2: No cam / No action forced / Unsuccessful            │
   │ PAGE UP      │ Case 3: All cam / No action forced / Not pickable / Unsucc  │
   │ PAGE DOWN    │ Case 4: All cam / Align + Extract / Damaged case / CHD payl │
   │ END          │ Case 5: All cam / No action forced / No case / Successful   │
   │ DELETE       │ Case 6: All cam / No action forced / Rogue case / CHD payl  │
-  │              │                                                             │
-  │ [CHRF]       │                                                             │
-  │ INSERT       │ CHRF 1: All cam / Align + Place / Successful                │
-  │ HOME         │ CHRF 2: All cam / Home actuator / Successful                │
-  │ PAGE UP      │ CHRF 3: All cam / Home actuator + Align + Place / Success   │
-  │ PAGE DOWN    │ CHRF 4: All cam / Home / Axes not resp / CHD (no payl)      │
-  │ END          │ CHRF 5: All cam / Home / Sensor malf / CHD (no payl)        │
-  │ DELETE       │ CHRF 6: All cam / Align + Ext / Damaged / CHD (with payl)   │
-  │              │                                                             │
+  ├──────────────┼─────────────────────────────────────────────────────────────┤
+  │  PHÍM TẮT    │ KHI CHUYỂN SANG [CHRF] (PHỤC HỒI SẠC)                       │
+  ├──────────────┼─────────────────────────────────────────────────────────────┤
+  │ INSERT       │ Case 1: All cam / Align + Place / Successful                │
+  │ HOME         │ Case 2: All cam / Home actuator / Successful                │
+  │ PAGE UP      │ Case 3: All cam / Home actuator + Align + Place / Success   │
+  │ PAGE DOWN    │ Case 4: All cam / Home / Axes not resp / CHD (no payl)      │
+  │ END          │ Case 5: All cam / Home / Sensor malf / CHD (no payl)        │
+  │ DELETE       │ Case 6: All cam / Align + Ext / Damaged / CHD (with payl)   │
+  ├──────────────┼─────────────────────────────────────────────────────────────┤
+  │ F6           │ Đổi qua lại chế độ MÀN HÌNH 4 (Main) <-> MÀN HÌNH 3 (Phụ)   │
   │ Ctrl + ESC   │ Thoát hoàn toàn tool SOP HUD                                │
   └──────────────┴─────────────────────────────────────────────────────────────┘
 
-* TÍNH NĂNG QUICK CLIPBOARD (CLICK NÚT LÀ COPY NGAY TỪ KHOÁ SỰ CỐ):
-  Phía dưới Popup HUD có sẵn 8 nút bấm chứa các Keyword thường dùng khi log lỗi:
-
-  ┌─────────────────────────────┬──────────────────────────────────────────────┐
-  │ TỪ KHOÁ (KEYWORD)           │ TÌNH HUỐNG & HƯỚNG DẪN LOG                   │
-  ├─────────────────────────────┼──────────────────────────────────────────────┤
-  │ bh_damage_case_on_payload   │ Thùng bị hỏng trên tay gắp (Ko gõ nếu ở kệ) │
-  │ bh_rogue_case_on_payload    │ Thùng lạ / ko xác định trên tay gắp          │
-  │ bh_debris_on_payload        │ Rác / mảnh vụn trên tay gắp bot              │
-  │ bh_tape_on_actuator         │ Băng dính kẹt tay gắp cản trở thao tác       │
-  │ bh_coh_fail                 │ Cảm biến COH báo kẹt ảo (stream xác nhận ko) │
-  │ bh_actuator_stuck           │ Tay gắp bị kẹt / ko di chuyển qua giới hạn   │
-  │ bh_lift_tilts               │ Bàn nâng bị nghiêng / chỉ 1 bên di chuyển    │
-  │ bh_bot_damaged              │ Bot bị hư hỏng vật lý / tay gắp gãy cong     │
-  └─────────────────────────────┴──────────────────────────────────────────────┘
-  --> Chỉ cần dùng chuột click 1 phát vào nút trên HUD là keyword tự động được 
-      sao chép vào clipboard của máy tính để bạn dán (Ctrl + V) bất cứ đâu!
+* TÍNH NĂNG QUICK CLIPBOARD (CLICK 1 CHẠM COPY TỪ KHOÁ SỰ CỐ):
+  Phía dưới HUD có sẵn 8 nút bấm lỗi:
+    📦 bh_damage_case_on_payload   (Thùng bị hỏng trên tay gắp)
+    📦 bh_rogue_case_on_payload    (Thùng lạ / ko xác định trên tay gắp)
+    🧹 bh_debris_on_payload        (Rác / mảnh vụn trên tay gắp)
+    🩹 bh_tape_on_actuator         (Băng dính kẹt tay gắp cản trở thao tác)
+    📡 bh_coh_fail                 (Cảm biến COH báo kẹt ảo)
+    ⚙️ bh_actuator_stuck           (Tay gắp bị kẹt / ko di chuyển hết cữ)
+    📐 bh_lift_tilts               (Bàn nâng bị nghiêng / chỉ 1 bên chạy)
+    ⚠️ bh_bot_damaged              (Bot bị hư hỏng vật lý / tay gắp cong gãy)
+  --> Chỉ cần click chuột vào nút là từ khoá tự chép vào clipboard để dán (Ctrl+V)!
 
 
 ================================================================================
-PHẦN V: XỬ LÝ SỰ CỐ THƯỜNG GẶP (TROUBLESHOOTING)
+PHẦN B: HƯỚNG DẪN CÔNG CỤ 2 — AUTO CLAIM TELEOPS (TỰ ĐỘNG NHẬN BOT)
+================================================================================
+Công cụ này dùng nhận diện hình ảnh (OpenCV, MSS) và đọc chữ OCR (EasyOCR) để 
+quét bảng danh sách Bot, tự động click nút CLAIM, xác nhận username và kết nối Bot.
+
+--------------------------------------------------------------------------------
+B1. CÀI ĐẶT THƯ VIỆN AUTO-CLAIM
+--------------------------------------------------------------------------------
+* Cách 1 (Khuyên dùng): Click đúp chuột vào file:
+    >>>  Install_AutoClaim.bat  <<<
+* Cách 2 (Gõ lệnh CMD):
+    pip install -r auto_claim/requirements.txt
+
+(Chờ 1-2 phút để máy tải xong các gói mss, opencv, easyocr, rapidfuzz).
+
+--------------------------------------------------------------------------------
+B2. CÀI ĐẶT USERNAME VÀ CẤU HÌNH BAN ĐẦU
+--------------------------------------------------------------------------------
+1. Mở file `auto_claim/config.json` bằng Notepad.
+2. Tìm dòng `"username": "YOUR_USERNAME_HERE"`, thay bằng đúng tên tài khoản 
+   Teleops của bạn (chính là dòng chữ xuất hiện ở ô CLAIM khi nhận bot thành công).
+3. Các tuỳ chọn khác (tuỳ chọn):
+   - `"allowed_teleop_types": ["SUSPECT", "CHRF"]` (Các loại bot cho phép nhận).
+   - `"site_blocklist": []` (Danh sách mã Site muốn bỏ qua, ví dụ: ["SITE1", "SITE2"]).
+4. Nhấn Ctrl + S để lưu lại file `config.json`.
+
+--------------------------------------------------------------------------------
+B3. HIỆU CHUẨN VÙNG BẢNG BOT (CALIBRATE)
+--------------------------------------------------------------------------------
+Gõ lệnh vào CMD:
+    python main.py calibrate
+
+Một màn hình bán trong suốt hiện ra. Hãy dùng chuột kéo thả các vùng theo hướng dẫn:
+1. KÉO CHUỘT chọn toàn bộ VÙNG BẢNG BOT (toàn bộ khu vực danh sách bot).
+2. KÉO CHUỘT chọn cột CLAIM (cột xuất hiện chữ "CLAIM").
+3. KÉO CHUỘT chọn cột TELEOP TYPE (chứa chữ SUSPECT / CHRF).
+4. KÉO CHUỘT chọn cột SELECT (cột chứa các nút Select màu xanh).
+5. CLICK CHUỘT vào tâm của nút CONNECT.
+Toạ độ sẽ được lưu tự động vào `auto_claim/config.json`.
+
+--------------------------------------------------------------------------------
+B4. VẬN HÀNH AUTO CLAIM
+--------------------------------------------------------------------------------
+* Khởi động tool: Click đúp vào file `Run_AutoClaim_Admin.bat` (hoặc gõ `python main.py`).
+* Bấm phím **F8**: Bắt đầu quét hoặc Tạm dừng quét tìm Bot.
+* Bấm phím **F9**: Thoát tool hoàn toàn.
+
+* QUY TRÌNH HOẠT ĐỘNG AN TOÀN TUYỆT ĐỐI:
+  1. Khi bấm F8, tool quét liên tục tìm dòng bot hợp lệ có chữ CLAIM.
+  2. Click CLAIM -> Đợi tên username của bạn xuất hiện để xác nhận bạn đã claim được.
+  3. Click SELECT -> Click CONNECT.
+  4. Sau khi kết nối thành công 01 Bot -> Tool TỰ ĐỘNG DỪNG LẠI (chuyển sang PAUSED), 
+     đảm bảo không bao giờ nhận nhầm thêm bot thứ hai khi bạn đang điều khiển.
+  5. Xử lý bot xong, chỉ cần bấm lại phím F8 để tool tìm bot tiếp theo.
+
+
+================================================================================
+PHẦN C: XỬ LÝ SỰ CỐ THƯỜNG GẶP (TROUBLESHOOTING)
 ================================================================================
 
-1. LỖI KHÔNG NHẬN PHÍM TẮT HOẶC BÁO "Failed to register hotkey":
-   -> Nguyên nhân: Do bạn đang mở nhiều cửa sổ CMD chạy tool cùng lúc, hoặc chưa chạy với quyền Administrator.
-   -> Khắc phục: Đóng hết tất cả cửa sổ CMD cũ, sau đó click đúp chạy file `Run_AutoClaim_Admin.bat` 
-      hoặc `Run_SOP_Admin.bat`.
+1. Báo lỗi "No module named pyautogui":
+   -> Click đúp chạy file `Install_AutoLogging.bat` (mất 5 giây).
 
-2. LỖI CLICK LỆCH TOẠ ĐỘ KHI ĐIỀN FORM HOẶC NHẬN BOT:
-   -> Nguyên nhân: Cửa sổ ứng dụng Teleops bị di chuyển, thu phóng hoặc độ phân giải Windows bị đổi.
-   -> Khắc phục: Mở lại Teleops đúng vị trí làm việc, chạy lại lệnh calibrate tương ứng:
-      - Cho Auto Claim: `python main.py calibrate`
-      - Cho SOP: `python sop_main.py calibrate --display <3 hoặc 4>` và `python sop_main.py calibrate_options --display <3 hoặc 4>`.
+2. Báo lỗi "Failed to register hotkey":
+   -> Do bạn đang mở nhiều cửa sổ CMD chạy tool cùng một lúc. Hãy đóng hết các cửa 
+      sổ CMD cũ rồi mở lại bằng `Run_SOP_Admin.bat` hoặc `Run_AutoClaim_Admin.bat`.
 
-3. LỖI CHUỘT KHÔNG TỰ DI CHUYỂN ĐẾN CỬA SỔ TELEOPS:
-   -> Hãy đảm bảo form SOP đang được mở sẵn trên màn hình tương ứng và không bị phần mềm khác che phủ hoàn toàn.
+3. Lệch toạ độ khi click vào form SOP hoặc bảng bot:
+   -> Do cửa sổ ứng dụng bị di chuyển hoặc đổi độ phân giải.
+   -> Chạy lại lệnh calibrate tương ứng:
+      + Với SOP: `python sop_main.py calibrate --display <3|4>` và `calibrate_options`.
+      + Với Auto Claim: `python main.py calibrate`.
 
-4. CÁCH ĐẶT DANH SÁCH CHẶN SITE HOẶC THAY ĐỔI TÊN ĐĂNG NHẬP:
-   -> Mở file `auto_claim/config.json`, chỉnh sửa mục `"username"` hoặc `"site_blocklist"` rồi lưu lại.
+4. Chữ hiển thị hoặc click chậm hơn bình thường:
+   -> Đảm bảo đang mở tool dưới quyền Administrator (click đúp qua các file .bat).
 
 ================================================================================
-CHÚC BẠN VẬN HÀNH THÀNH CÔNG VÀ TIẾT KIỆM TỐI ĐA THỜI GIAN THAO TÁC!
+CHÚC BẠN VẬN HÀNH THUẬN TIỆN VÀ TIẾT KIỆM TỐI ĐA THỜI GIAN LÀM VIỆC!
 ================================================================================

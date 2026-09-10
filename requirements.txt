@@ -1,31 +1,28 @@
 # ============================================================
 # Teleops Automation Suite — Python Dependencies
-# (Dùng chung cho cả Auto Claim và Auto Logging SOP)
 # ============================================================
-# Tương thích: Python 3.10 – 3.14 (khuyến nghị Python 3.12 - 3.14)
 #
-# Cài đặt toàn bộ:
-#   pip install -r requirements.txt
+# 👉 BẠN CHỈ DÙNG SOP AUTO-LOGGING? (Cài 5 giây, siêu nhẹ):
+#    pip install -r auto_logging/requirements.txt
+#    (Hoặc click đúp file: Install_AutoLogging.bat)
 #
-# Kiểm tra phiên bản Python:
-#   python --version
+# 👉 BẠN DÙNG AUTO-CLAIM NHẬN BOT? (Đầy đủ OCR & Vision):
+#    pip install -r auto_claim/requirements.txt
+#    (Hoặc click đúp file: Install_AutoClaim.bat)
+#
+# 👉 BẠN MUỐN CÀI TẤT CẢ THƯ VIỆN CHO CẢ 2 TOOL:
+#    pip install -r requirements.txt
 # ============================================================
 
-# ── 1. Screen capture (<10ms/frame cho Auto Claim) ──────────
-mss>=10.2.0
-
-# ── 2. Computer vision & xử lý hình ảnh ─────────────────────
-numpy>=2.0.0
-opencv-python>=4.8.0
+# ── [SOP Auto-Logging] Lightweight Dependencies ────────────
+pyautogui>=0.9.54
 Pillow>=10.0.0
 
-# ── 3. OCR (Nhận dạng chữ trên màn hình cho Auto Claim) ─────
+# ── [Auto-Claim] Screen Capture, Vision & OCR ──────────────
+mss>=10.2.0
+numpy>=2.0.0
+opencv-python>=4.8.0
 easyocr>=1.7.2
-
-# ── 4. Điều khiển chuột & bàn phím ──────────────────────────
-pyautogui>=0.9.54
-
-# ── 5. Fuzzy string matching (Khớp username và keyword) ─────
 rapidfuzz>=3.0.0
 
 # ============================================================
