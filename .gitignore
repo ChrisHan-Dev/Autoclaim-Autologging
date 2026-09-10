@@ -3,11 +3,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Logs
+# Logs & Screenshots
 *.log
 *.jsonl
-automation/logs/
-sop/logs/
+auto_claim/logs/
+auto_claim/screenshots/
+auto_logging/logs/
 logs/
 
 # Environments

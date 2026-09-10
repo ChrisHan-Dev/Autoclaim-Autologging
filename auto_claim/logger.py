@@ -86,8 +86,8 @@ class Logger:
 
     def __init__(self, logging_cfg: dict) -> None:
         self._cfg = logging_cfg
-        self._log_dir = Path(logging_cfg.get("log_dir", "automation/logs"))
-        self._ss_dir = Path(logging_cfg.get("screenshot_dir", "automation/screenshots"))
+        self._log_dir = Path(logging_cfg.get("log_dir", "auto_claim/logs"))
+        self._ss_dir = Path(logging_cfg.get("screenshot_dir", "auto_claim/screenshots"))
         self._log_dir.mkdir(parents=True, exist_ok=True)
         self._ss_dir.mkdir(parents=True, exist_ok=True)
 

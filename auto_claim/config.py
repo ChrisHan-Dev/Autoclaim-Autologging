@@ -55,7 +55,7 @@ _DEFAULTS: dict[str, Any] = {
         "max_row_height_px": 60,
         "line_thickness_threshold": 1,
         "use_template_matching": False,
-        "template_select_btn": "automation/templates/select_btn.png",
+        "template_select_btn": "auto_claim/templates/select_btn.png",
         "template_confidence": 0.80,
     },
     "debug": {
@@ -69,8 +69,8 @@ _DEFAULTS: dict[str, Any] = {
     },
     "logging": {
         "level": "INFO",
-        "log_dir": "automation/logs",
-        "screenshot_dir": "automation/screenshots",
+        "log_dir": "auto_claim/logs",
+        "screenshot_dir": "auto_claim/screenshots",
         "max_log_files": 7,
         "max_log_size_mb": 10,
     },
@@ -84,8 +84,18 @@ def get_base_dir() -> Path:
         return Path(sys.executable).parent
     return Path(__file__).resolve().parent.parent
 
-# Path resolution: config.json lives next to the executable or package root
-_DEFAULT_CONFIG_PATH = get_base_dir() / "config.json"
+def _resolve_config_path() -> Path:
+    """Look for config.json inside auto_claim/ first, then in root directory."""
+    local_cfg = Path(__file__).resolve().parent / "config.json"
+    if local_cfg.exists():
+        return local_cfg
+    root_cfg = get_base_dir() / "config.json"
+    if root_cfg.exists():
+        return root_cfg
+    return local_cfg
+
+# Path resolution: config.json lives inside auto_claim or next to the executable
+_DEFAULT_CONFIG_PATH = _resolve_config_path()
 
 
 class ConfigManager:

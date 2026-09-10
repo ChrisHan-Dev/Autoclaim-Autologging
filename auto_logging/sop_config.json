@@ -31,6 +31,7 @@
     "case_3": "pageup",
     "case_4": "pagedown",
     "case_5": "end",
+    "case_6": "delete",
     "exit": "ctrl+esc",
     "toggle_display": "f6"
   },
@@ -55,7 +56,7 @@
   "dropdown_geometry": {
     "vision_functionality": {
       "first_option_x": 305,
-      "first_option_y": 641,
+      "first_option_y": 648,
       "row_height": 19
     },
     "actions_required": {
@@ -74,9 +75,9 @@
       "row_height": 25
     }
   },
-  "hud_x": 790,
-  "hud_y": 439,
-  "active_display": 3,
+  "hud_x": 2516,
+  "hud_y": 369,
+  "active_display": 4,
   "active_pair": [
     4,
     3
@@ -113,7 +114,7 @@
       "dropdown_geometry": {
         "vision_functionality": {
           "first_option_x": 305,
-          "first_option_y": 641,
+          "first_option_y": 648,
           "row_height": 19
         },
         "actions_required": {
@@ -164,7 +165,7 @@
       "dropdown_geometry": {
         "vision_functionality": {
           "first_option_x": 2171,
-          "first_option_y": 638,
+          "first_option_y": 648,
           "row_height": 22
         },
         "actions_required": {

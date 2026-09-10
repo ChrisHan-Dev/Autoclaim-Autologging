@@ -45,7 +45,7 @@ class SOPStatusHUD:
     """
 
     WINDOW_WIDTH = 320
-    WINDOW_HEIGHT = 320
+    WINDOW_HEIGHT = 355
 
     def __init__(
         self,
@@ -301,6 +301,7 @@ class SOPStatusHUD:
             ("f3", "Case 3", "PgUp",   "All cam / Not pickable"),
             ("f4", "Case 4", "PgDn",   "All cam / Align+Ext / CHD"),
             ("f5", "Case 5", "End",    "All cam / No action / No case / Success"),
+            ("f6", "Case 6", "Del",    "All cam / No action / Rogue / CHD"),
         ]
 
         for case_key, label_main, key_hint, subtitle in case_defs:
@@ -353,7 +354,7 @@ class SOPStatusHUD:
         footer = tk.Frame(root, bg=_C["bg"], height=16)
         footer.pack(fill="x", side="bottom", pady=(0, 2))
         tk.Label(
-            footer, text=f"F6: Đổi Màn {d1}/{d2} | Insert..End: Điền Form | ESC: Thoát",
+            footer, text=f"F6: Đổi Màn {d1}/{d2} | Ins..Del: Điền Form | ESC: Thoát",
             bg=_C["bg"], fg=_C["fg_dim"], font=("Segoe UI", 7)
         ).pack(expand=True)
 

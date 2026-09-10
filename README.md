@@ -88,24 +88,40 @@ python main.py debug
 ## Project Structure
 
 ```
-automation/
-├── __init__.py
-├── config.py        # ConfigManager — loads/saves config.json
-├── capture.py       # ScreenCapture — MSS-based region capture
-├── ocr.py           # OCRReader — EasyOCR CLAIM column reader
-├── vision.py        # ClaimDetector — row detection + button finding
-├── clicker.py       # MouseController — safe debounced clicks
-├── workflow.py      # WorkflowEngine — FSM automation loop
-├── calibrate.py     # CalibrationTool — drag-to-select GUI setup
-├── overlay.py       # DebugOverlay — live HUD window
-├── logger.py        # Logger — text + JSONL structured logs
-├── templates/       # Optional: select_btn.png for template matching
-├── logs/            # Auto-created: daily rotating logs
-└── screenshots/     # Auto-created: error screenshots
-main.py              # CLI entry point
-config.json          # Runtime configuration
-requirements.txt
-README.md
+Automation/
+├── auto_claim/                 # [1] Teleops Auto Claim Tool
+│   ├── __init__.py
+│   ├── main.py                 # Auto-claim entry point
+│   ├── config.json             # Runtime configuration
+│   ├── config.py               # ConfigManager — loads/saves config.json
+│   ├── capture.py              # ScreenCapture — MSS-based region capture
+│   ├── ocr.py                  # OCRReader — EasyOCR CLAIM column reader
+│   ├── vision.py               # ClaimDetector — row detection + button finding
+│   ├── clicker.py              # MouseController — safe debounced clicks
+│   ├── workflow.py             # WorkflowEngine — FSM automation loop
+│   ├── calibrate.py            # CalibrationTool — drag-to-select GUI setup
+│   ├── status_window.py        # StatusWindow — live status popup window
+│   ├── logger.py               # Logger — text + JSONL structured logs
+│   ├── logs/                   # Auto-created: daily rotating logs
+│   └── screenshots/            # Auto-created: error screenshots
+│
+├── auto_logging/               # [2] SOP Auto-Logging Tool (Multi-Display)
+│   ├── __init__.py
+│   ├── sop_main.py             # SOP logging entry point
+│   ├── sop_config.json         # SOP runtime configuration
+│   ├── sop_config.py           # SOP ConfigManager
+│   ├── sop_logging.py          # Core SOP auto-fill logic & Win32 hotkeys
+│   ├── sop_calibrate.py        # Calibration tools for SOP form & options
+│   ├── sop_hud.py              # Floating always-on-top HUD window
+│   └── sop_display.py          # Multi-display resolution helper
+│
+├── Run_AutoClaim_Admin.bat     # 1-Click launcher for Auto Claim (Admin)
+├── Run_SOP_Admin.bat           # 1-Click launcher for SOP Auto Logging (Admin)
+├── main.py                     # Root entry point wrapper -> auto_claim.main
+├── sop_main.py                 # Root entry point wrapper -> auto_logging.sop_main
+├── requirements.txt            # Python dependencies
+├── HUONG_DAN.txt               # Detailed Vietnamese guide
+└── README.md
 ```
 
 ---
@@ -193,9 +209,9 @@ Then enable in `config.json`:
 
 | File | Contents |
 |------|----------|
-| `automation/logs/automation_YYYYMMDD.log` | Human-readable timestamped events |
-| `automation/logs/events_YYYYMMDD.jsonl` | Machine-readable JSON Lines (one event per line) |
-| `automation/screenshots/` | PNG snapshots saved on errors |
+| `auto_claim/logs/automation_YYYYMMDD.log` | Human-readable timestamped events |
+| `auto_claim/logs/events_YYYYMMDD.jsonl` | Machine-readable JSON Lines (one event per line) |
+| `auto_claim/screenshots/` | PNG snapshots saved on errors |
 
 ---
 

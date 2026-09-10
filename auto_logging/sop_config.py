@@ -57,6 +57,7 @@ _DEFAULTS: dict = {
         "case_3": "pageup",
         "case_4": "pagedown",
         "case_5": "end",
+        "case_6": "delete",
         "toggle_display": "f6",
         "exit":   "ctrl+esc",
     },

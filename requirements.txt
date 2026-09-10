@@ -1,35 +1,37 @@
 # ============================================================
-# Teleops Auto Claim — Python Dependencies
+# Teleops Automation Suite — Python Dependencies
+# (Dùng chung cho cả Auto Claim và Auto Logging SOP)
 # ============================================================
-# Tương thích: Python 3.10 – 3.14 (khuyến nghị 3.14.x)
+# Tương thích: Python 3.10 – 3.14 (khuyến nghị Python 3.12 - 3.14)
 #
-# Cài đặt:
+# Cài đặt toàn bộ:
 #   pip install -r requirements.txt
 #
-# Kiểm tra Python:
+# Kiểm tra phiên bản Python:
 #   python --version
 # ============================================================
 
-# ── Screen capture (<10ms/frame) ────────────────────────────
+# ── 1. Screen capture (<10ms/frame cho Auto Claim) ──────────
 mss>=10.2.0
 
-# ── Computer vision & xử lý ảnh ────────────────────────────
-numpy>=2.5.1
-opencv-python>=5.0.0.93
-Pillow>=12.3.0
+# ── 2. Computer vision & xử lý hình ảnh ─────────────────────
+numpy>=2.0.0
+opencv-python>=4.8.0
+Pillow>=10.0.0
 
-# ── OCR (nhận dạng chữ trên màn hình) ───────────────────────
+# ── 3. OCR (Nhận dạng chữ trên màn hình cho Auto Claim) ─────
 easyocr>=1.7.2
 
-# ── Điều khiển chuột ─────────────────────────────────────────
+# ── 4. Điều khiển chuột & bàn phím ──────────────────────────
 pyautogui>=0.9.54
 
-# ── Fuzzy matching (kiểm tra username trong CLAIM cell) ──────
-rapidfuzz>=3.14.0
+# ── 5. Fuzzy string matching (Khớp username và keyword) ─────
+rapidfuzz>=3.0.0
 
 # ============================================================
-# TÙY CHỌN: Tăng tốc GPU cho EasyOCR (cần NVIDIA CUDA 12.x)
-# Bỏ comment dòng dưới rồi chạy:
+# TÙY CHỌN: Tăng tốc GPU cho EasyOCR (Nếu máy có GPU NVIDIA)
+# ============================================================
+# Chạy lệnh sau để cài PyTorch CUDA:
 #   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
-# Sau đó đặt "gpu": true trong config.json > "ocr"
+# Sau đó đổi "gpu": true trong auto_claim/config.json -> "ocr"
 # ============================================================

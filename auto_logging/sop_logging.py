@@ -190,6 +190,16 @@ SOP_CASES: dict[str, SOPCase] = {
         comment              = "",
     ),
 
+    # ── Case 6 (Del) ── All cameras / No action-forced / Rogue case / CHD with payload
+    "f6": SOPCase(
+        name                 = "Case 6 - All cam / No action forced / Rogue case / CHD",
+        vision_functionality = VisionFunctionality.ALL_CAMERAS,
+        actions_required     = ActionsRequired.NO_ACTION_FORCED,
+        maintenance_issues   = MaintenanceIssues.ROGUE_CASE,
+        resolution           = Resolution.CHD_WITH_PAYLOAD,
+        comment              = "",
+    ),
+
 }
 
 
@@ -212,9 +222,6 @@ class SOPFormFiller:
         self.DROPDOWN_DELAY = timing.get("dropdown_delay_s", 0.12)
         self.OPTION_DELAY   = timing.get("option_delay_s",   0.03)
         self.TYPE_INTERVAL  = timing.get("type_interval_s",  0.02)
-        
-        from automation.clicker import MouseController
-        self.mouse = MouseController(mouse, timing)
 
     def warmup(self, display_id: int | None = None) -> None:
         """Kiểm tra calibration trước khi chạy."""
