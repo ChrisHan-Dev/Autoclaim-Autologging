@@ -27,6 +27,7 @@ _DEFAULT_FORM_COORDS: dict = {
 _DEFAULTS: dict = {
     "active_display": 4,
     "active_pair": [4, 3],
+    "active_sop_type": "SUSPECT",
     "displays": {
         "4": {
             "name": "Màn hình 4 (Main)",
@@ -59,6 +60,7 @@ _DEFAULTS: dict = {
         "case_5": "end",
         "case_6": "delete",
         "toggle_display": "f6",
+        "toggle_type":    "f7",
         "exit":   "ctrl+esc",
     },
     "mouse": {
@@ -161,6 +163,13 @@ class SOPConfig:
 
     def set_active_pair(self, d1: int, d2: int) -> None:
         self._data["active_pair"] = [int(d1), int(d2)]
+        self.save()
+
+    def get_active_sop_type(self) -> str:
+        return str(self._data.get("active_sop_type", "SUSPECT")).upper()
+
+    def set_active_sop_type(self, sop_type: str) -> None:
+        self._data["active_sop_type"] = str(sop_type).upper()
         self.save()
 
     def get_form_coords(self, display_id: int | None = None) -> dict:

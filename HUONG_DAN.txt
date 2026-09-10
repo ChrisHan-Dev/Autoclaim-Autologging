@@ -221,18 +221,33 @@ Cách 2: Gõ lệnh `python sop_main.py` vào CMD.
 
 * GIAO DIỆN & PHÍM TẮT ĐIỀU KHIỂN:
   - Một cửa sổ Popup HUD nhỏ gọn màu đen xanh hiện lên góc màn hình (luôn nổi trên cùng, có thể kéo thả).
+  - Thanh chọn loại SOP (Dropdown):
+    + Mặc định hiển thị: [▼ SUSPECT (6 Cases)] và luôn giữ nguyên bảng SUSPECT để bạn làm việc.
+    + Khi cần log bot sạc CHRF: Click vào Dropdown -> Chọn [⚡ CHRF] -> Bảng SUSPECT sẽ tự đóng lại và chuyển sang bảng CHRF (4 Cases). Lựa chọn này được tự động ghi nhớ cho các lần chạy sau.
+    + Nút [▲ Đóng / ▼ Mở]: Cho phép bạn tuỳ ý thu gọn bảng Case nếu muốn tiết kiệm diện tích màn hình.
   - Bạn có thể bấm nút trên Popup HUD hoặc bấm trực tiếp phím tắt trên bàn phím:
 
   ┌──────────────┬─────────────────────────────────────────────────────────────┐
-  │  PHÍM TẮT    │ CHỨC NĂNG ĐIỀN FORM                                         │
+  │  PHÍM TẮT    │ CHỨC NĂNG ĐIỀN FORM (THEO LOẠI SOP ĐANG CHỌN)               │
   ├──────────────┼─────────────────────────────────────────────────────────────┤
   │ F6           │ Đổi qua lại chế độ MÀN HÌNH 4 (Main) <-> MÀN HÌNH 3 (Phụ)   │
+  │              │                                                             │
+  │ [SUSPECT]    │                                                             │
   │ INSERT       │ Case 1: All cam / Align + Extract / Successful              │
   │ HOME         │ Case 2: No cam / No action forced / Unsuccessful            │
   │ PAGE UP      │ Case 3: All cam / No action forced / Not pickable / Unsucc  │
   │ PAGE DOWN    │ Case 4: All cam / Align + Extract / Damaged case / CHD payl │
   │ END          │ Case 5: All cam / No action forced / No case / Successful   │
   │ DELETE       │ Case 6: All cam / No action forced / Rogue case / CHD payl  │
+  │              │                                                             │
+  │ [CHRF]       │                                                             │
+  │ INSERT       │ CHRF 1: All cam / Align + Place / Successful                │
+  │ HOME         │ CHRF 2: All cam / Home actuator / Successful                │
+  │ PAGE UP      │ CHRF 3: All cam / Home actuator + Align + Place / Success   │
+  │ PAGE DOWN    │ CHRF 4: All cam / Home / Axes not resp / CHD (no payl)      │
+  │ END          │ CHRF 5: All cam / Home / Sensor malf / CHD (no payl)        │
+  │ DELETE       │ CHRF 6: All cam / Align + Ext / Damaged / CHD (with payl)   │
+  │              │                                                             │
   │ Ctrl + ESC   │ Thoát hoàn toàn tool SOP HUD                                │
   └──────────────┴─────────────────────────────────────────────────────────────┘
 

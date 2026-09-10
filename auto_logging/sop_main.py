@@ -41,7 +41,14 @@ if _ROOT not in sys.path:
 
 from auto_logging.sop_config import SOPConfig
 from auto_logging.sop_hud import SOPStatusHUD
-from auto_logging.sop_logging import SOPHotkeyManager, SOPFormFiller, SOP_CASES
+from auto_logging.sop_logging import (
+    SOPHotkeyManager,
+    SOPFormFiller,
+    SOP_CASES,
+    SUSPECT_CASES,
+    CHRF_CASES,
+    SOP_CASES_BY_TYPE,
+)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -51,6 +58,7 @@ from auto_logging.sop_logging import SOPHotkeyManager, SOPFormFiller, SOP_CASES
 def print_banner(cfg: SOPConfig) -> None:
     hk = cfg.hotkeys_cfg
     active_disp = cfg.get_active_display()
+    active_type = cfg.get_active_sop_type()
     pair = cfg.get_active_pair()
     d1, d2 = pair[0], pair[1]
 
@@ -63,20 +71,29 @@ def print_banner(cfg: SOPConfig) -> None:
     n2 = f"Màn {d2} (Main)" if d2 == 4 else f"Màn {d2}"
 
     print("\n" + "=" * 60)
-    print("  📋 [SOP] SOP Logging Automation (Multi-Display)")
+    print("  📋 [SOP] SOP Logging Automation (Multi-Display & Multi-Type)")
     print("=" * 60)
     print(f"  Config       : {cfg._path}")
     print(f"  Admin        : {'[OK] Running as Administrator' if is_admin() else '[WARN] Standard User'}")
     print(f"  Active Màn   : MÀN HÌNH {active_disp}")
+    print(f"  Active Type  : [{active_type}] (Có thể đổi qua dropdown trên HUD)")
     print(f"  {n1:12} : Form: {'[OK]' if c1 else '[--] Chưa calib'} | Options: {'[OK]' if g1 else '[--] Chưa calib'}")
     print(f"  {n2:12} : Form: {'[OK]' if c2 else '[--] Chưa calib'} | Options: {'[OK]' if g2 else '[--] Chưa calib'}")
     print()
     print("  -- Phím tắt -------------------------------------------------------------")
     toggle_key = hk.get("toggle_display", "f6").upper()
     print(f"  {toggle_key:10} -> Chuyển đổi Màn {d1} <-> Màn {d2}")
-    for i, (key_default, case) in enumerate(SOP_CASES.items(), start=1):
-        key_name = hk.get(f"case_{i}", key_default).upper()
-        print(f"  {key_name:10} -> {case.name}")
+    if active_type == "CHRF":
+        print(f"  {'INSERT':10} -> CHRF 1 (Align + Place / Success)")
+        print(f"  {'HOME':10} -> CHRF 2 (Home actuator / Success)")
+        print(f"  {'PAGE UP':10} -> CHRF 3 (Home + Align + Place / Success)")
+        print(f"  {'PAGE DN':10} -> CHRF 4 (Home / Axes not resp / CHD no payl)")
+        print(f"  {'END':10} -> CHRF 5 (Home / Sensor malf / CHD no payl)")
+        print(f"  {'DELETE':10} -> CHRF 6 (Align + Ext / Damaged / CHD payl)")
+    else:
+        for i, (key_default, case) in enumerate(SUSPECT_CASES.items(), start=1):
+            key_name = hk.get(f"case_{i}", key_default).upper()
+            print(f"  {key_name:10} -> {case.name}")
     print()
     print(f"  {'Ctrl+ESC':10} -> Thoát")
     print("=" * 60 + "\n")
@@ -87,10 +104,11 @@ def print_banner(cfg: SOPConfig) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def cmd_status(cfg: SOPConfig) -> None:
-    print("\n=== SOP Config Status (Multi-Display) ===")
+    print("\n=== SOP Config Status (Multi-Display & Multi-Type) ===")
     print(f"  File         : {cfg._path}")
     print(f"  Admin        : {'YES (Administrator)' if is_admin() else 'NO (Standard User)'}")
     print(f"  Active Màn   : Màn hình {cfg.get_active_display()}")
+    print(f"  Active Type  : {cfg.get_active_sop_type()}")
     print()
 
     pair = cfg.get_active_pair()
@@ -109,9 +127,17 @@ def cmd_status(cfg: SOPConfig) -> None:
     hk = cfg.hotkeys_cfg
     d1, d2 = pair[0], pair[1]
     print(f"    {hk.get('toggle_display', 'f6').upper():10} -> Đổi Màn {d1} <-> Màn {d2}")
-    for i, (key_default, case) in enumerate(SOP_CASES.items(), start=1):
+    print("    [SUSPECT]")
+    for i, (key_default, case) in enumerate(SUSPECT_CASES.items(), start=1):
         cfg_key = f"case_{i}"
-        print(f"    {hk.get(cfg_key, key_default).upper():10} -> {case.name}")
+        print(f"      {hk.get(cfg_key, key_default).upper():10} -> {case.name}")
+    print("    [CHRF]")
+    print(f"      {'INSERT':10} -> CHRF 1 (Align + Place / Success)")
+    print(f"      {'HOME':10} -> CHRF 2 (Home actuator / Success)")
+    print(f"      {'PAGE UP':10} -> CHRF 3 (Home + Align + Place / Success)")
+    print(f"      {'PAGE DN':10} -> CHRF 4 (Home / Axes not resp / CHD no payl)")
+    print(f"      {'END':10} -> CHRF 5 (Home / Sensor malf / CHD no payl)")
+    print(f"      {'DELETE':10} -> CHRF 6 (Align + Ext / Damaged / CHD payl)")
     print(f"    {'Ctrl+ESC':10} -> Thoát\n")
 
 
@@ -268,6 +294,18 @@ Ví dụ:
             cfg.set_active_display(nxt)
             print(f"[SOP] Đổi sang Màn hình {nxt}")
 
+    def on_switch_sop_type(new_type: str):
+        print(f"[SOP] Đã chuyển sang Loại SOP: {new_type}")
+
+    def on_toggle_sop_type():
+        if hud:
+            hud.toggle_sop_type()
+        else:
+            cur = cfg.get_active_sop_type()
+            nxt = "CHRF" if cur == "SUSPECT" else "SUSPECT"
+            cfg.set_active_sop_type(nxt)
+            print(f"[SOP] Đổi sang Loại SOP: {nxt}")
+
     def on_trigger_case(case_key: str):
         with busy_lock:
             if is_busy[0]:
@@ -275,7 +313,24 @@ Ví dụ:
                 return
             is_busy[0] = True
 
-        case = SOP_CASES.get(case_key)
+        current_type = cfg.get_active_sop_type()
+        type_cases = SOP_CASES_BY_TYPE.get(current_type, SUSPECT_CASES)
+
+        # Ánh xạ hotkey f1..f6 sang c1..c6 nếu đang ở chế độ CHRF
+        if current_type == "CHRF":
+            map_chrf = {
+                "f1": "c1",
+                "f2": "c2",
+                "f3": "c3",
+                "f4": "c4",
+                "f5": "c5",
+                "f6": "c6",
+            }
+            actual_key = map_chrf.get(case_key, case_key)
+        else:
+            actual_key = case_key
+
+        case = type_cases.get(actual_key)
         if not case:
             with busy_lock:
                 is_busy[0] = False
@@ -317,6 +372,7 @@ Ví dụ:
         cfg,
         on_trigger_case=on_trigger_case,
         on_toggle_display=on_toggle_display,
+        on_toggle_sop_type=on_toggle_sop_type,
     )
     hk_mgr.start()
 
@@ -326,6 +382,7 @@ Ví dụ:
         on_trigger_case=on_trigger_case,
         on_exit=on_exit,
         on_switch_display=on_switch_display,
+        on_switch_sop_type=on_switch_sop_type,
     )
 
     # Xử lý Ctrl+C
@@ -338,11 +395,13 @@ Ví dụ:
 
     print("[SOP] Đang chạy Popup HUD và lắng nghe phím tắt:")
     print(f"      F6       -> Đổi qua lại Màn {d1} (Main) <-> Màn {d2} (Phụ)")
+    print("      F7       -> Đổi qua lại Loại SOP (SUSPECT <-> CHRF)")
     print("      INSERT   -> Case 1 (All cam / Align+Extract / Success)")
     print("      HOME     -> Case 2 (No cam / No action / Unsuccessful)")
     print("      PAGE UP  -> Case 3 (All cam / Not pickable)")
     print("      PAGE DN  -> Case 4 (All cam / Align+Ext / CHD)")
     print("      END      -> Case 5 (All cam / No action / No case / Success)")
+    print("      DELETE   -> Case 6 (All cam / No action / Rogue / CHD)")
     print("      (Hoặc click trực tiếp các nút trên Popup HUD)")
     print("      Đóng Popup HUD hoặc Ctrl+C để thoát.\n")
 

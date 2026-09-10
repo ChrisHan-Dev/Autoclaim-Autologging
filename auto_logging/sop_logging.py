@@ -135,10 +135,11 @@ class SOPCase:
 
 
 # =============================================================================
-# CÁC TRƯỜNG HỢP SOP MẶC ĐỊNH
+# CÁC TRƯỜNG HỢP SOP THEO TỪNG LOẠI (SUSPECT / CHRF)
 # =============================================================================
 
-SOP_CASES: dict[str, SOPCase] = {
+# ── 1. SUSPECT (6 Cases ban đầu) ──────────────────────────────────────────────
+SUSPECT_CASES: dict[str, SOPCase] = {
 
     # ── Case 1 (Insert) ── All cameras / Align+Extract / (no maint) / Successful
     "f1": SOPCase(
@@ -201,6 +202,79 @@ SOP_CASES: dict[str, SOPCase] = {
     ),
 
 }
+
+# ── 2. CHRF (Charger Recovery) ────────────────────────────────────────────────
+CHRF_CASES: dict[str, SOPCase] = {
+
+    # ── Case 1 (Insert) ── All cam / Align + Place / Successful
+    "c1": SOPCase(
+        name                 = "CHRF 1 - All cam / Align+Place / Successful",
+        vision_functionality = VisionFunctionality.ALL_CAMERAS,
+        actions_required     = [ActionsRequired.ALIGN, ActionsRequired.PLACE],
+        maintenance_issues   = None,
+        resolution           = Resolution.SUCCESSFUL,
+        comment              = "",
+    ),
+
+    # ── Case 2 (Home) ── All cam / Home actuator / Successful
+    "c2": SOPCase(
+        name                 = "CHRF 2 - All cam / Home actuator / Successful",
+        vision_functionality = VisionFunctionality.ALL_CAMERAS,
+        actions_required     = ActionsRequired.HOME_ACTUATORS,
+        maintenance_issues   = None,
+        resolution           = Resolution.SUCCESSFUL,
+        comment              = "",
+    ),
+
+    # ── Case 3 (PgUp) ── All cam / Home actuator + Align + Place / Successful
+    "c3": SOPCase(
+        name                 = "CHRF 3 - All cam / Home+Align+Place / Successful",
+        vision_functionality = VisionFunctionality.ALL_CAMERAS,
+        actions_required     = [ActionsRequired.HOME_ACTUATORS, ActionsRequired.ALIGN, ActionsRequired.PLACE],
+        maintenance_issues   = None,
+        resolution           = Resolution.SUCCESSFUL,
+        comment              = "",
+    ),
+
+    # ── Case 4 (PgDn) ── All cam / Home actuator / Axes not responding / CHD (without payload)
+    "c4": SOPCase(
+        name                 = "CHRF 4 - All cam / Home / Axes not resp / CHD no payl",
+        vision_functionality = VisionFunctionality.ALL_CAMERAS,
+        actions_required     = ActionsRequired.HOME_ACTUATORS,
+        maintenance_issues   = MaintenanceIssues.AXES_NOT_RESPONDING,
+        resolution           = Resolution.CHD_WITHOUT_PAYLOAD,
+        comment              = "",
+    ),
+
+    # ── Case 5 (End) ── All cam / Home actuator / Sensor malfunction / CHD (without payload)
+    "c5": SOPCase(
+        name                 = "CHRF 5 - All cam / Home / Sensor malf / CHD no payl",
+        vision_functionality = VisionFunctionality.ALL_CAMERAS,
+        actions_required     = ActionsRequired.HOME_ACTUATORS,
+        maintenance_issues   = MaintenanceIssues.SENSOR_MALFUNCTION,
+        resolution           = Resolution.CHD_WITHOUT_PAYLOAD,
+        comment              = "",
+    ),
+
+    # ── Case 6 (Del) ── All cam / Align + Extract / Damaged case / CHD (with payload)
+    "c6": SOPCase(
+        name                 = "CHRF 6 - All cam / Align+Ext / Damaged / CHD with payl",
+        vision_functionality = VisionFunctionality.ALL_CAMERAS,
+        actions_required     = [ActionsRequired.ALIGN, ActionsRequired.EXTRACT],
+        maintenance_issues   = MaintenanceIssues.DAMAGED_CASE,
+        resolution           = Resolution.CHD_WITH_PAYLOAD,
+        comment              = "",
+    ),
+
+}
+
+SOP_CASES_BY_TYPE: dict[str, dict[str, SOPCase]] = {
+    "SUSPECT": SUSPECT_CASES,
+    "CHRF":    CHRF_CASES,
+}
+
+# Tương thích ngược: mặc định trỏ về SUSPECT_CASES
+SOP_CASES: dict[str, SOPCase] = SUSPECT_CASES
 
 
 # =============================================================================
@@ -570,12 +644,14 @@ class SOPHotkeyManager:
         cfg,
         on_trigger_case: Optional[Callable[[str], None]] = None,
         on_toggle_display: Optional[Callable[[], None]] = None,
+        on_toggle_sop_type: Optional[Callable[[], None]] = None,
     ) -> None:
         self._cfg = cfg
         self._filler = SOPFormFiller(cfg)
         self._hk_cfg = cfg.hotkeys_cfg
         self._on_trigger_case = on_trigger_case
         self._on_toggle_display = on_toggle_display
+        self._on_toggle_sop_type = on_toggle_sop_type
         self._thread: Optional[SOPHotkeyThread] = None
         self._busy = False
         self._lock = threading.Lock()
@@ -606,14 +682,24 @@ class SOPHotkeyManager:
 
                 print(f"[SOP HK] {display:14} -> {case.name}")
 
-        # Hotkey chuyển đổi màn hình (Toggle Display)
+        # Hotkey chuyển đổi màn hình (Toggle Display - F6)
         if self._on_toggle_display:
             toggle_combo = self._hk_cfg.get("toggle_display", "f6")
             t_mods, t_vk = _parse_key(toggle_combo)
             if t_vk:
                 hotkeys[hk_id] = (t_mods, t_vk, self._on_toggle_display)
                 hk_id += 1
-                print(f"[SOP HK] {toggle_combo.upper():14} -> Chuyển đổi Màn 1 <-> Màn 2")
+                print(f"[SOP HK] {toggle_combo.upper():14} -> Chuyển đổi Màn hình")
+
+        # Hotkey chuyển đổi loại SOP (Toggle SOP Type SUSPECT <-> CHRF - nếu có trong config)
+        if self._on_toggle_sop_type:
+            type_combo = self._hk_cfg.get("toggle_type")
+            if type_combo:
+                tp_mods, tp_vk = _parse_key(type_combo)
+                if tp_vk:
+                    hotkeys[hk_id] = (tp_mods, tp_vk, self._on_toggle_sop_type)
+                    hk_id += 1
+                    print(f"[SOP HK] {type_combo.upper():14} -> Chuyển đổi Loại SOP (SUSPECT <-> CHRF)")
 
         # Exit hotkey
         exit_combo = self._hk_cfg.get("exit", "ctrl+esc")
@@ -635,7 +721,22 @@ class SOPHotkeyManager:
                         return
                     self._busy = True
                 try:
-                    self._filler.fill(case)
+                    active_type = self._cfg.get_active_sop_type()
+                    type_cases = SOP_CASES_BY_TYPE.get(active_type, SUSPECT_CASES)
+                    if active_type == "CHRF":
+                        map_chrf = {
+                            "f1": "c1",
+                            "f2": "c2",
+                            "f3": "c3",
+                            "f4": "c4",
+                            "f5": "c5",
+                            "f6": "c6",
+                        }
+                        actual_key = map_chrf.get(case_key, case_key)
+                    else:
+                        actual_key = case_key
+                    resolved_case = type_cases.get(actual_key, case)
+                    self._filler.fill(resolved_case)
                 finally:
                     self._busy = False
         return cb
