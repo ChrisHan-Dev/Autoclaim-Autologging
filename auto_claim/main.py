@@ -86,20 +86,10 @@ def is_admin() -> bool:
 
 
 def ensure_admin() -> None:
-    """Tự động bật UAC prompt để chạy lại dưới quyền Administrator nếu chưa có."""
-    if is_admin():
-        return
-    import ctypes
-    import sys
-    try:
-        params = " ".join([f'"{arg}"' for arg in sys.argv])
-        ret = ctypes.windll.shell32.ShellExecuteW(
-            None, "runas", sys.executable, params, None, 1
-        )
-        if ret > 32:
-            sys.exit(0)
-    except Exception as e:
-        print(f"[WARN] Không thể tự động nâng quyền Admin: {e}")
+    """Kiểm tra quyền Administrator và ghi chú trạng thái."""
+    if not is_admin():
+        print("[INFO] Đang chạy dưới quyền Standard User.")
+        print("[INFO] (Để cấp quyền Admin tối đa, hãy chạy bằng Run_AutoClaim_Admin.bat)")
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────

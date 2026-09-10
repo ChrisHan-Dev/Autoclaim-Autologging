@@ -236,6 +236,24 @@ Cách 2: Gõ lệnh `python sop_main.py` vào CMD.
   │ Ctrl + ESC   │ Thoát hoàn toàn tool SOP HUD                                │
   └──────────────┴─────────────────────────────────────────────────────────────┘
 
+* TÍNH NĂNG QUICK CLIPBOARD (CLICK NÚT LÀ COPY NGAY TỪ KHOÁ SỰ CỐ):
+  Phía dưới Popup HUD có sẵn 8 nút bấm chứa các Keyword thường dùng khi log lỗi:
+
+  ┌─────────────────────────────┬──────────────────────────────────────────────┐
+  │ TỪ KHOÁ (KEYWORD)           │ TÌNH HUỐNG & HƯỚNG DẪN LOG                   │
+  ├─────────────────────────────┼──────────────────────────────────────────────┤
+  │ bh_damage_case_on_payload   │ Thùng bị hỏng trên tay gắp (Ko gõ nếu ở kệ) │
+  │ bh_rogue_case_on_payload    │ Thùng lạ / ko xác định trên tay gắp          │
+  │ bh_debris_on_payload        │ Rác / mảnh vụn trên tay gắp bot              │
+  │ bh_tape_on_actuator         │ Băng dính kẹt tay gắp cản trở thao tác       │
+  │ bh_coh_fail                 │ Cảm biến COH báo kẹt ảo (stream xác nhận ko) │
+  │ bh_actuator_stuck           │ Tay gắp bị kẹt / ko di chuyển qua giới hạn   │
+  │ bh_lift_tilts               │ Bàn nâng bị nghiêng / chỉ 1 bên di chuyển    │
+  │ bh_bot_damaged              │ Bot bị hư hỏng vật lý / tay gắp gãy cong     │
+  └─────────────────────────────┴──────────────────────────────────────────────┘
+  --> Chỉ cần dùng chuột click 1 phát vào nút trên HUD là keyword tự động được 
+      sao chép vào clipboard của máy tính để bạn dán (Ctrl + V) bất cứ đâu!
+
 
 ================================================================================
 PHẦN V: XỬ LÝ SỰ CỐ THƯỜNG GẶP (TROUBLESHOOTING)

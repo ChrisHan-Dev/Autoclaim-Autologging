@@ -35,17 +35,34 @@ _C = {
     "btn_active":"#1652f0",
     "disp_active_bg": "#0f3460",
     "disp_active_fg": "#00e5ff",
+    "kw_bg":     "#151928",
+    "kw_hover":  "#242d4a",
+    "kw_active": "#0f4a36",
+    "kw_fg":     "#00e5ff",
 }
+
+# ── Danh sách Keyword sự cố nhanh (Click để Copy vào Clipboard) ────────────────
+KEYWORD_DEFS: list[tuple[str, str, str, str]] = [
+    ("bh_damage_case_on_payload", "📦", "bh_damage_case",   "Damaged Case on Payload (not shelf)"),
+    ("bh_rogue_case_on_payload",  "📦", "bh_rogue_case",    "Rogue Case on Payload"),
+    ("bh_debris_on_payload",      "🧹", "bh_debris",        "Debris on Payload"),
+    ("bh_tape_on_actuator",       "🩹", "bh_tape_actuator", "Tape on Actuator / COH block"),
+    ("bh_coh_fail",               "📡", "bh_coh_fail",      "COH Sensor False Block"),
+    ("bh_actuator_stuck",         "⚙️", "bh_actuator_stuck", "Actuator Stuck / Err limit"),
+    ("bh_lift_tilts",             "📐", "bh_lift_tilts",    "Lift Tilts / Half moves (Error 1)"),
+    ("bh_bot_damaged",            "⚠️", "bh_bot_damaged",   "Actuators Bent / Broken / Missing"),
+]
 
 
 class SOPStatusHUD:
     """
     Floating always-on-top HUD window for SOP Logging.
     Hỗ trợ chuyển đổi giữa 2 màn hình (Màn 4 Main và Màn 3) trên cùng 1 Popup.
+    Tích hợp Quick Clipboard (Click để Copy từ khoá sự cố).
     """
 
-    WINDOW_WIDTH = 320
-    WINDOW_HEIGHT = 355
+    WINDOW_WIDTH = 340
+    WINDOW_HEIGHT = 490
 
     def __init__(
         self,
@@ -349,12 +366,87 @@ class SOPStatusHUD:
 
             self._buttons[case_key] = btn_frame
 
+        # ── Quick Clipboard Zone (Click-to-Copy Keywords) ─────────────────────
+        kw_section = tk.Frame(root, bg=_C["bg"], padx=6)
+        kw_section.pack(fill="x", pady=(3, 1))
+
+        # Header for Keywords
+        kw_hdr = tk.Frame(kw_section, bg=_C["bg"])
+        kw_hdr.pack(fill="x", pady=(0, 2))
+
+        tk.Label(
+            kw_hdr,
+            text="🏷️ QUICK CLIPBOARD (Click để Copy)",
+            bg=_C["bg"],
+            fg=_C["fg_dim"],
+            font=("Segoe UI", 7, "bold"),
+            anchor="w",
+        ).pack(side="left")
+
+        # 2 Columns Grid
+        kw_grid = tk.Frame(kw_section, bg=_C["bg"])
+        kw_grid.pack(fill="x")
+        kw_grid.columnconfigure(0, weight=1)
+        kw_grid.columnconfigure(1, weight=1)
+
+        for idx, (kw, icon, display_title, desc) in enumerate(KEYWORD_DEFS):
+            row = idx // 2
+            col = idx % 2
+
+            btn_f = tk.Frame(
+                kw_grid,
+                bg=_C.get("kw_bg", "#151928"),
+                highlightbackground=_C["border"],
+                highlightthickness=1,
+                cursor="hand2",
+                padx=4,
+                pady=2,
+            )
+            btn_f.grid(row=row, column=col, sticky="nsew", padx=1, pady=1)
+
+            lbl_icon = tk.Label(
+                btn_f,
+                text=icon,
+                bg=_C.get("kw_bg", "#151928"),
+                fg=_C["fg"],
+                font=("Segoe UI", 7),
+            )
+            lbl_icon.pack(side="left", padx=(0, 2))
+
+            lbl_txt = tk.Label(
+                btn_f,
+                text=display_title,
+                bg=_C.get("kw_bg", "#151928"),
+                fg=_C.get("kw_fg", "#00e5ff"),
+                font=("Segoe UI", 7, "bold"),
+                anchor="w",
+            )
+            lbl_txt.pack(side="left", fill="x", expand=True)
+
+            def _make_kw_click(k=kw, lt=lbl_txt, orig=display_title):
+                return lambda _: self._copy_keyword(k, lt, orig)
+
+            def _make_kw_hover_in(f=btn_f, d=desc, k=kw):
+                return lambda _: self._kw_hover_on(f, d, k)
+
+            def _make_kw_hover_out(f=btn_f):
+                return lambda _: self._kw_hover_off(f)
+
+            kw_click_cb = _make_kw_click()
+            kw_hin_cb   = _make_kw_hover_in()
+            kw_hout_cb  = _make_kw_hover_out()
+
+            for w in (btn_f, lbl_icon, lbl_txt):
+                w.bind("<Button-1>", kw_click_cb)
+                w.bind("<Enter>", kw_hin_cb)
+                w.bind("<Leave>", kw_hout_cb)
+
         # ── Footer Hint ────────────────────────────────────────────────────────
         d1, d2 = self._disp_pair[0], self._disp_pair[1]
         footer = tk.Frame(root, bg=_C["bg"], height=16)
         footer.pack(fill="x", side="bottom", pady=(0, 2))
         tk.Label(
-            footer, text=f"F6: Đổi Màn {d1}/{d2} | Ins..Del: Điền Form | ESC: Thoát",
+            footer, text=f"F6: Đổi Màn {d1}/{d2} | Ins..Del: Form | Click KW: Copy | ESC: Thoát",
             bg=_C["bg"], fg=_C["fg_dim"], font=("Segoe UI", 7)
         ).pack(expand=True)
 
@@ -408,6 +500,52 @@ class SOPStatusHUD:
                     sub.config(bg=_C["btn_bg"])
             except Exception:
                 pass
+
+    def _copy_keyword(self, kw: str, lbl: tk.Label, orig_text: str) -> None:
+        """Sao chép keyword vào Windows Clipboard và phản hồi trực quan tức thì."""
+        if not self._root:
+            return
+        try:
+            self._root.clipboard_clear()
+            self._root.clipboard_append(kw)
+            self._root.update()
+        except Exception:
+            pass
+
+        with self._lock:
+            self._status_text = "ĐÃ COPY KEYWORD!"
+            self._status_color = _C["cyan"]
+            self._detail_text = f"📋 Đã chép: {kw}"
+
+        try:
+            lbl.config(text="✓ COPIED!", fg=_C["green"])
+            self._root.after(700, lambda: self._restore_kw(lbl, orig_text))
+        except Exception:
+            pass
+
+    def _restore_kw(self, lbl: tk.Label, orig_text: str) -> None:
+        try:
+            lbl.config(text=orig_text, fg=_C.get("kw_fg", "#00e5ff"))
+        except Exception:
+            pass
+
+    def _kw_hover_on(self, frame: tk.Frame, desc: str, kw: str) -> None:
+        for w in [frame] + list(frame.winfo_children()):
+            try:
+                w.config(bg=_C.get("kw_hover", "#242d4a"))
+            except Exception:
+                pass
+        with self._lock:
+            self._detail_text = f"💡 {desc}"
+
+    def _kw_hover_off(self, frame: tk.Frame) -> None:
+        for w in [frame] + list(frame.winfo_children()):
+            try:
+                w.config(bg=_C.get("kw_bg", "#151928"))
+            except Exception:
+                pass
+        with self._lock:
+            self._detail_text = f"Màn hình {self._active_display} — Nhấn phím hoặc click"
 
     def _trigger(self, case_key: str) -> None:
         """Trigger khi click vào nút trên HUD."""
