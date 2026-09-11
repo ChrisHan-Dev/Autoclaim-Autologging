@@ -7,6 +7,16 @@ echo   CAI DAT THU VIEN CHO AUTO-CLAIM (OCR & VISION)
 echo =======================================================
 echo.
 
+:: Tu dong tim va them duong dan Python vao PATH
+for %%v in (314 313 312 311 310) do (
+    if exist "%LOCALAPPDATA%\Programs\Python\Python%%v" (
+        set "PATH=%LOCALAPPDATA%\Programs\Python\Python%%v;%LOCALAPPDATA%\Programs\Python\Python%%v\Scripts;%PATH%"
+    )
+    if exist "C:\Program Files\Python%%v" (
+        set "PATH=C:\Program Files\Python%%v;C:\Program Files\Python%%v\Scripts;%PATH%"
+    )
+)
+
 :: Kiem tra Python
 python --version >nul 2>&1
 if %errorLevel% neq 0 (

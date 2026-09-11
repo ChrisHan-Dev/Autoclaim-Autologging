@@ -336,14 +336,14 @@ class SOPStatusHUD:
         root = tk.Tk()
         self._root = root
 
-        # Clamp initial position
+        # Clamp initial position to ensure it is always visible on screen
         try:
             sw = root.winfo_screenwidth()
             sh = root.winfo_screenheight()
-            if self._x < -3000 or self._x > 5000:
-                self._x = 80
-            if self._y < -3000 or self._y > 5000:
-                self._y = 80
+            if self._x < -2500 or self._x > 4500:
+                self._x = 100
+            if self._y < 10 or self._y > (sh - 100):
+                self._y = 100
         except Exception:
             pass
 
