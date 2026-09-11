@@ -103,33 +103,23 @@ class SOPConfig:
 
         displays = self._data.setdefault("displays", {})
 
-        # Migration: Nếu toạ độ Màn 1 trước đây thực chất là Main Screen (Màn 4)
-        if "1" in displays and "4" not in displays:
-            # Chuyển toạ độ đã calibrate sang Màn 4
-            displays["4"] = {
-                "name": "Màn hình 4 (Main)",
-                "form_coords": displays["1"].get("form_coords", self._data.get("form_coords", _DEFAULT_FORM_COORDS.copy())),
-                "dropdown_geometry": displays["1"].get("dropdown_geometry", self._data.get("dropdown_geometry", {})),
-            }
-        elif "4" not in displays:
-            displays["4"] = {
-                "name": "Màn hình 4 (Main)",
-                "form_coords": self._data.get("form_coords", _DEFAULT_FORM_COORDS.copy()),
-                "dropdown_geometry": self._data.get("dropdown_geometry", {}),
-            }
+        # Đảm bảo các màn hình trong active_pair tồn tại trong displays
+        active_pair = self._data.get("active_pair", [2, 3])
+        if not isinstance(active_pair, list) or len(active_pair) < 2:
+            active_pair = [2, 3]
+            self._data["active_pair"] = active_pair
 
-        if "3" not in displays:
-            displays["3"] = {
-                "name": "Màn hình 3 (Phụ)",
-                "form_coords": _DEFAULT_FORM_COORDS.copy(),
-                "dropdown_geometry": {},
-            }
+        for d in [1, 2, 3, 4]:
+            d_str = str(d)
+            if d_str not in displays:
+                displays[d_str] = {
+                    "name": f"Màn hình {d}",
+                    "form_coords": _DEFAULT_FORM_COORDS.copy() if d in active_pair else {},
+                    "dropdown_geometry": {},
+                }
 
-        if "active_display" not in self._data or self._data["active_display"] not in [3, 4]:
-            self._data["active_display"] = 4
-
-        if "active_pair" not in self._data:
-            self._data["active_pair"] = [4, 3]
+        if "active_display" not in self._data or int(self._data["active_display"]) not in [1, 2, 3, 4]:
+            self._data["active_display"] = active_pair[0]
 
         hotkeys = self._data.setdefault("hotkeys", {})
         if "toggle_display" not in hotkeys:

@@ -109,10 +109,10 @@ class SOPStatusHUD:
         self._running = False
         self._lock = threading.Lock()
 
-        # Display pair: [4, 3]
+        # Display pair: [2, 3] or configured pair
         self._disp_pair = self.cfg.get_active_pair()
         if len(self._disp_pair) < 2:
-            self._disp_pair = [4, 3]
+            self._disp_pair = [2, 3]
 
         # Active SOP Type ("SUSPECT" or "CHRF")
         self._active_sop_type = self.cfg.get_active_sop_type()
@@ -412,8 +412,8 @@ class SOPStatusHUD:
         disp_container.pack(fill="x")
 
         d1, d2 = self._disp_pair[0], self._disp_pair[1]
-        name1 = f"🖥️ MÀN {d1} (Main)" if d1 == 4 else f"🖥️ MÀN {d1}"
-        name2 = f"🖥️ MÀN {d2} (Main)" if d2 == 4 else f"🖥️ MÀN {d2}"
+        name1 = f"🖥️ MÀN {d1}"
+        name2 = f"🖥️ MÀN {d2}"
 
         # Tab Màn D1
         self._disp_btn_1 = tk.Label(
@@ -678,8 +678,8 @@ class SOPStatusHUD:
             return
 
         d1, d2 = self._disp_pair[0], self._disp_pair[1]
-        name1 = f"MÀN {d1} (Main)" if d1 == 4 else f"MÀN {d1}"
-        name2 = f"MÀN {d2} (Main)" if d2 == 4 else f"MÀN {d2}"
+        name1 = f"MÀN {d1}"
+        name2 = f"MÀN {d2}"
 
         is_1 = (self._active_display == d1)
         if is_1:

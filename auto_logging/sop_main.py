@@ -67,8 +67,8 @@ def print_banner(cfg: SOPConfig) -> None:
     g1 = bool(cfg.get_dropdown_geometry(d1))
     g2 = bool(cfg.get_dropdown_geometry(d2))
 
-    n1 = f"Màn {d1} (Main)" if d1 == 4 else f"Màn {d1}"
-    n2 = f"Màn {d2} (Main)" if d2 == 4 else f"Màn {d2}"
+    n1 = f"Màn {d1}"
+    n2 = f"Màn {d2}"
 
     print("\n" + "=" * 60)
     print("  📋 [SOP] SOP Logging Automation (Multi-Display & Multi-Type)")
@@ -113,7 +113,7 @@ def cmd_status(cfg: SOPConfig) -> None:
 
     pair = cfg.get_active_pair()
     for d in pair:
-        name = f"Màn hình {d} (Main)" if d == 4 else f"Màn hình {d} (Phụ)"
+        name = f"Màn hình {d}"
         cal = "YES" if cfg.is_calibrated(d) else "NO"
         geom_ok = "YES" if bool(cfg.get_dropdown_geometry(d)) else "NO"
         print(f"── [{name}] ── Form Calibrated: {cal} | Options Calibrated: {geom_ok}")
@@ -204,7 +204,15 @@ Ví dụ:
         choices=[1, 2, 3, 4],
         default=None,
         dest="display",
-        help="Chọn màn hình (1, 2, 3, hoặc 4; mặc định: 3 hoặc 4)",
+        help="Chọn màn hình (1, 2, 3, hoặc 4; mặc định: theo active_display)",
+    )
+    parser.add_argument(
+        "--pair",
+        nargs=2,
+        type=int,
+        choices=[1, 2, 3, 4],
+        default=None,
+        help="Chọn cặp 2 màn hình hoạt động (ví dụ: --pair 2 3)",
     )
     parser.add_argument(
         "--case",
@@ -219,6 +227,14 @@ Ví dụ:
         ensure_admin()
 
     cfg = SOPConfig()
+
+    if args.pair:
+        cfg.set_active_pair(args.pair[0], args.pair[1])
+        cfg.set_active_display(args.pair[0])
+        print(f"[SOP] Đã cập nhật cặp màn hình hoạt động: {args.pair[0]} và {args.pair[1]}")
+
+    if args.display is not None and args.command == "run":
+        cfg.set_active_display(args.display)
 
     # ── status ────────────────────────────────────────────────────────────────
     if args.command == "status":

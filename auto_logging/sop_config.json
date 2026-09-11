@@ -185,6 +185,41 @@
           "row_height": 24
         }
       }
+    },
+    "1": {
+      "name": "Màn hình 1",
+      "form_coords": {},
+      "dropdown_geometry": {}
+    },
+    "2": {
+      "name": "Màn hình 2",
+      "form_coords": {
+        "vision_functionality": {
+          "x": 0,
+          "y": 0
+        },
+        "actions_required": {
+          "x": 0,
+          "y": 0
+        },
+        "maintenance_issues": {
+          "x": 0,
+          "y": 0
+        },
+        "resolution": {
+          "x": 0,
+          "y": 0
+        },
+        "comment": {
+          "x": 0,
+          "y": 0
+        },
+        "send_button": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "dropdown_geometry": {}
     }
   }
 }
