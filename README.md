@@ -11,8 +11,8 @@ A dual-purpose automation suite designed for Symbotic Teleops operators:
 
 | Tool | Purpose | Setup Time | Key Dependencies | Quick Launcher |
 | :--- | :--- | :---: | :--- | :--- |
-| **[1. SOP Auto-Logging](#-part-1-sop-auto-logging-standalone)** | Tự động điền form SOP sau khi xử lý Bot | **~5 seconds** | `pyautogui`, `Pillow` | `Run_SOP_Admin.bat` |
-| **[2. Teleops Auto-Claim](#-part-2-teleops-auto-claim)** | Tự động quét & nhận Bot trên bảng danh sách | **~1-2 minutes** | `easyocr`, `opencv`, `mss` | `Run_AutoClaim_Admin.bat` |
+| **[1. SOP Auto-Logging](#-part-1-sop-auto-logging-standalone)** | Auto-fill SOP form after handling bot | **~5 seconds** | `pyautogui`, `Pillow` | `Run_SOP_Admin.bat` |
+| **[2. Teleops Auto-Claim](#-part-2-teleops-auto-claim)** | Auto-scan & claim bots from table | **~1-2 minutes** | `easyocr`, `opencv`, `mss` | `Run_AutoClaim_Admin.bat` |
 
 ---
 

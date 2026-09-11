@@ -1,11 +1,11 @@
 """
 main.py — Teleops GUI Automation Tool (Terminal + Popup)
-Chạy từ terminal, hiện popup nhỏ trạng thái.
+Runs from terminal with a small floating status popup HUD.
 
-Cách dùng:
-    python main.py              # Chạy automation (popup + terminal)
-    python main.py calibrate    # Hiệu chỉnh vùng màn hình
-    python main.py status       # Xem trạng thái config hiện tại
+Usage:
+    python main.py              # Run automation (popup + terminal)
+    python main.py calibrate    # Calibrate screen regions
+    python main.py status       # View current config status
 """
 
 import os
@@ -16,10 +16,15 @@ import time
 import queue
 import argparse
 
-# Đảm bảo đường dẫn gốc được thêm vào sys.path
+# Ensure root dir is in sys.path
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 from auto_claim.config import ConfigManager
 from auto_claim.logger import Logger
@@ -31,7 +36,7 @@ from auto_claim.status_window import StatusWindow
 # ── Terminal status printer ──────────────────────────────────────────────────
 
 class TerminalStatus:
-    """In trạng thái automation ra terminal theo thời gian thực."""
+    """Print live automation status to the terminal in real time."""
 
     _ICONS = {
         "IDLE":           "⬜",
@@ -66,7 +71,7 @@ class TerminalStatus:
 # ── Combined updater ─────────────────────────────────────────────────────────
 
 class CombinedUpdater:
-    """Gửi update tới cả popup và terminal cùng lúc."""
+    """Send status updates to both popup HUD and terminal simultaneously."""
 
     def __init__(self, popup: StatusWindow, terminal: TerminalStatus):
         self._popup = popup
@@ -86,10 +91,10 @@ def is_admin() -> bool:
 
 
 def ensure_admin() -> None:
-    """Kiểm tra quyền Administrator và ghi chú trạng thái."""
+    """Check Administrator privileges and note status."""
     if not is_admin():
-        print("[INFO] Đang chạy dưới quyền Standard User.")
-        print("[INFO] (Để cấp quyền Admin tối đa, hãy chạy bằng Run_AutoClaim_Admin.bat)")
+        print("[INFO] Running as Standard User.")
+        print("[INFO] (To grant full Admin privileges, run via Run_AutoClaim_Admin.bat)")
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
@@ -99,16 +104,16 @@ def main():
         description="Teleops GUI Automation Tool",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Hotkeys (hoạt động toàn hệ thống):
-  F8   — Bật / Tắt automation
-  F9   — Dừng khẩn cấp
-  F10  — Tạm dừng / Tiếp tục
-  ESC  — Thoát chương trình
+Hotkeys (system-wide):
+  F8   — Toggle automation ON / OFF
+  F9   — Emergency Stop
+  F10  — Pause / Resume
+  ESC  — Exit program
 
-Ví dụ:
-  python main.py              # Chạy automation
-  python main.py calibrate    # Hiệu chỉnh màn hình
-  python main.py status       # Xem trạng thái config
+Examples:
+  python main.py              # Run automation
+  python main.py calibrate    # Calibrate screen regions
+  python main.py status       # Check config status
         """
     )
     parser.add_argument(
@@ -116,32 +121,46 @@ Ví dụ:
         nargs="?",
         default="run",
         choices=["run", "calibrate", "status"],
-        help="Lệnh cần chạy (mặc định: run)",
+        help="Command to run (default: run)",
+    )
+    parser.add_argument(
+        "--profile",
+        type=str,
+        default=None,
+        help="Choose profile (e.g. home / office)",
     )
     args = parser.parse_args()
 
-    # Tự động nâng quyền Administrator (trừ lệnh status)
+    # Check Administrator privileges (except status command)
     if args.command != "status":
         ensure_admin()
 
     cfg = ConfigManager()
     log = Logger(cfg.logging_cfg)
 
+    if args.profile:
+        try:
+            cfg.switch_profile(args.profile)
+            print(f"[AutoClaim] Switched to profile: {args.profile.upper()}")
+        except KeyError as e:
+            print(f"[AutoClaim] Warning: {e}")
+
     # ── calibrate ──────────────────────────────────────────────────────
     if args.command == "calibrate":
         from auto_claim.calibrate import CalibrationTool
-        log.info("Bắt đầu hiệu chỉnh...")
+        log.info("Starting calibration...")
         calibrator = CalibrationTool(cfg, log)
         calibrator.run()
-        log.info("Hiệu chỉnh xong.")
+        log.info("Calibration complete.")
         return
 
     # ── status ─────────────────────────────────────────────────────────
     if args.command == "status":
         print("\n=== Teleops Automation — Config Status ===")
         print(f"  Config file      : {cfg._path}")
+        print(f"  Active Profile   : {cfg.get_active_profile().upper()}")
         print(f"  Calibrated       : {'YES' if cfg.is_calibrated() else 'NO  ← run: python main.py calibrate'}")
-        print(f"  Username         : {cfg.username or '(chưa đặt)'}")
+        print(f"  Username         : {cfg.username or '(not set)'}")
         print(f"  Table region     : {cfg.table_region}")
         print(f"  Type column      : {cfg.type_column}")
         print(f"  Site column      : {cfg.site_column}")
@@ -157,41 +176,42 @@ Ví dụ:
 
     # ── run ────────────────────────────────────────────────────────────
     if not cfg.is_calibrated():
-        print("\n⚠️  Chưa hiệu chỉnh! Hãy chạy trước:")
+        print("\n⚠️  Not calibrated! Please run first:")
         print("     python main.py calibrate\n")
         sys.exit(1)
 
-    # Thread-safe queue cho events
+    # Thread-safe queue for events
     ui_queue = queue.Queue()
 
-    # Tạo popup + terminal updater
+    # Create popup + terminal updater
     terminal = TerminalStatus()
     status_window = StatusWindow(cfg)
     combined = CombinedUpdater(status_window, terminal)
 
-    # Khởi động engine trong thread nền
+    # Start engine in background thread
     engine = WorkflowEngine(cfg, log, on_update=combined.update)
     engine_thread = threading.Thread(target=engine.start, daemon=True, name="WorkflowEngine")
     engine_thread.start()
 
-    # Đăng ký hotkeys toàn hệ thống
+    # Register system-wide hotkeys
     hk_manager = HotkeyManager(cfg.get("hotkeys", {}), engine)
     hk_manager.start()
 
     print("\n" + "="*50)
     print("  🤖 Teleops Auto Claim — Running")
     print("="*50)
-    print(f"  User      : {cfg.username or '(chưa đặt)'}")
-    print(f"  Blocklist : {cfg.site_blocklist or 'Không có'}")
+    print(f"  Profile   : [{cfg.get_active_profile().upper()}] (Switch on popup or via --profile)")
+    print(f"  User      : {cfg.username or '(not set)'}")
+    print(f"  Blocklist : {cfg.site_blocklist or 'None'}")
     print()
     hk = cfg.get("hotkeys", {})
-    print(f"  {hk.get('toggle', 'F8').upper():6} — Bật / Tắt")
-    print(f"  {hk.get('emergency_stop', 'F9').upper():6} — Dừng khẩn cấp")
-    print(f"  {hk.get('pause_resume', 'F10').upper():6} — Tạm dừng / Tiếp tục")
-    print(f"  {'ESC':6} — Thoát")
+    print(f"  {hk.get('toggle', 'F8').upper():6} — Start / Stop")
+    print(f"  {hk.get('emergency_stop', 'F9').upper():6} — Emergency Stop")
+    print(f"  {hk.get('pause_resume', 'F10').upper():6} — Pause / Resume")
+    print(f"  {'ESC':6} — Exit")
     print("="*50 + "\n")
 
-    # Xử lý queue từ popup (chỉ EXIT)
+    # Handle queue from popup (EXIT only)
     def process_queue_callback(q: queue.Queue):
         try:
             while True:
@@ -201,27 +221,27 @@ Ví dụ:
                     hk_manager.stop()
                     status_window.stop()
         except queue.Empty:
-            # Nếu engine thread chết, thoát popup
+            # If engine thread dies, close popup
             if not engine_thread.is_alive():
                 status_window.stop()
 
-    # Xử lý Ctrl+C
+    # Handle Ctrl+C
     def _sigint(sig, frame):
-        print("\n[!] Ctrl+C — đang thoát...")
+        print("\n[!] Ctrl+C — exiting...")
         engine.safe_exit()
         hk_manager.stop()
         status_window.stop()
 
     signal.signal(signal.SIGINT, _sigint)
 
-    # Chạy popup trên main thread (blocking)
-    # Terminal vẫn in song song qua TerminalStatus
+    # Run popup on main thread (blocking)
+    # Terminal prints concurrently via TerminalStatus
     status_window.build_and_run(ui_queue, process_queue_callback)
 
-    # Sau khi popup đóng
+    # After popup closes
     engine.safe_exit()
     hk_manager.stop()
-    print("[✓] Đã thoát.")
+    print("[✓] Exited.")
 
 
 if __name__ == "__main__":

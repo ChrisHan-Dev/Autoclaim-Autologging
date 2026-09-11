@@ -104,5 +104,98 @@
   },
   "_comment": "Run 'python main.py calibrate' to interactively set all regions/buttons.",
   "status_window_x": 1035,
-  "status_window_y": 99
+  "status_window_y": 99,
+  "profiles": {
+    "office": {
+      "monitor_index": 3,
+      "table_region": {
+        "left": 52,
+        "top": 604,
+        "width": 1489,
+        "height": 293
+      },
+      "site_column": {
+        "left": 498,
+        "top": 603,
+        "width": 151,
+        "height": 291
+      },
+      "type_column": {
+        "left": 201,
+        "top": 602,
+        "width": 150,
+        "height": 293
+      },
+      "alarm_column": {
+        "left": 943,
+        "top": 603,
+        "width": 151,
+        "height": 291
+      },
+      "claim_column": {
+        "left": 1091,
+        "top": 601,
+        "width": 151,
+        "height": 296
+      },
+      "select_column": {
+        "left": 1240,
+        "top": 603,
+        "width": 150,
+        "height": 293
+      },
+      "connect_button": {
+        "x": 773,
+        "y": 125
+      },
+      "status_window_x": 1035,
+      "status_window_y": 99
+    },
+    "home": {
+      "monitor_index": 1,
+      "table_region": {
+        "left": -1,
+        "top": -1,
+        "width": -1,
+        "height": -1
+      },
+      "site_column": {
+        "left": -1,
+        "top": -1,
+        "width": -1,
+        "height": -1
+      },
+      "type_column": {
+        "left": -1,
+        "top": -1,
+        "width": -1,
+        "height": -1
+      },
+      "alarm_column": {
+        "left": -1,
+        "top": -1,
+        "width": -1,
+        "height": -1
+      },
+      "claim_column": {
+        "left": -1,
+        "top": -1,
+        "width": -1,
+        "height": -1
+      },
+      "select_column": {
+        "left": -1,
+        "top": -1,
+        "width": -1,
+        "height": -1
+      },
+      "connect_button": {
+        "x": -1,
+        "y": -1
+      },
+      "status_window_x": 100,
+      "status_window_y": 100
+    }
+  },
+  "active_profile": "office"
 }

@@ -1,13 +1,14 @@
 """
-sop_logging.py — Auto-fill "Logging SOP (SUSPECT)" form (STANDALONE & Multi-Display)
-===================================================================================
-Độc lập hoàn toàn với autoclaim. Chạy bằng sop_main.py.
+sop_logging.py — SOP Logging Engine & Standalone Hotkey Manager
+==============================================================
+Runs completely standalone from auto_claim. Managed by sop_main.py.
 
-Cách hoạt động:
-  1. User nhấn hotkey (Insert, Home, PgUp, PgDn, End) hoặc click trên HUD
-  2. Script kiểm tra màn hình đang chọn (Màn 1 hoặc Màn 2)
-  3. Script click từng dropdown theo thứ tự và chọn option định sẵn
-  4. Fill Comment nếu có
+Workflow:
+  1. User presses hotkey (Insert, Home, PgUp, PgDn, End, Del) or clicks HUD
+  2. Script verifies selected display
+  3. Script clicks each dropdown in sequence and selects predefined options
+  4. Fills Comment field if specified
+  5. Clicks Send button
 """
 
 from __future__ import annotations
@@ -71,8 +72,8 @@ class Resolution:
 
 
 # =============================================================================
-# DROPDOWN OPTION ORDER (phải khớp chính xác với thứ tự trong UI)
-# Dùng để tính toạ độ click theo index
+# DROPDOWN OPTION ORDER (must match UI order exactly)
+# Used to calculate click coordinate by index
 # =============================================================================
 
 DROPDOWN_OPTIONS: dict[str, list[str]] = {
@@ -135,10 +136,10 @@ class SOPCase:
 
 
 # =============================================================================
-# CÁC TRƯỜNG HỢP SOP THEO TỪNG LOẠI (SUSPECT / CHRF)
+# SOP CASES BY TYPE (SUSPECT / CHRF)
 # =============================================================================
 
-# ── 1. SUSPECT (6 Cases ban đầu) ──────────────────────────────────────────────
+# ── 1. SUSPECT (Original 6 Cases) ──────────────────────────────────────────────
 SUSPECT_CASES: dict[str, SOPCase] = {
 
     # ── Case 1 (Insert) ── All cameras / Align+Extract / (no maint) / Successful
@@ -273,18 +274,18 @@ SOP_CASES_BY_TYPE: dict[str, dict[str, SOPCase]] = {
     "CHRF":    CHRF_CASES,
 }
 
-# Tương thích ngược: mặc định trỏ về SUSPECT_CASES
+# Backward compatibility: default points to SUSPECT_CASES
 SOP_CASES: dict[str, SOPCase] = SUSPECT_CASES
 
 
 # =============================================================================
-# FORM FILLER ENGINE  (position-based — KHÔNG dùng OCR)
+# FORM FILLER ENGINE  (position-based — NO OCR)
 # =============================================================================
 
 class SOPFormFiller:
     """
-    Chọn option trong dropdown theo toạ độ pixel đã calibrate của màn hình tương ứng.
-    KHÔNG dùng OCR.
+    Selects options in dropdowns using calibrated pixel coordinates for the active display.
+    Does NOT use OCR.
     """
 
     def __init__(self, cfg) -> None:
@@ -298,25 +299,25 @@ class SOPFormFiller:
         self.TYPE_INTERVAL  = timing.get("type_interval_s",  0.02)
 
     def warmup(self, display_id: int | None = None) -> None:
-        """Kiểm tra calibration trước khi chạy."""
+        """Verify calibration before running."""
         pyautogui.FAILSAFE = False
         d_id = display_id if display_id is not None else self._cfg.get_active_display()
         geom = self._cfg.get_dropdown_geometry(d_id)
         missing = [f for f in DROPDOWN_OPTIONS if f not in geom]
         if missing:
-            print(f"[SOP] WARN (Màn {d_id}): Chưa calibrate options cho: {missing}")
-            print(f"[SOP]       Chạy: python sop_main.py calibrate_options --display {d_id}")
+            print(f"[SOP] WARN (Display {d_id}): Dropdown options not calibrated for: {missing}")
+            print(f"[SOP]       Run: python sop_main.py calibrate_options --display {d_id}")
         else:
-            print(f"[SOP] Ready (Màn {d_id}, position-based, no OCR).")
+            print(f"[SOP] Ready (Display {d_id}, position-based, no OCR).")
 
     # ── win32 mouse implementation (multi-monitor & hardware-safe) ─────────────
 
     def _move_cursor(self, x: int, y: int) -> None:
-        """Dịch chuyển chuột tức thì đến toạ độ ảo (0ms, hỗ trợ mọi màn hình)."""
+        """Move cursor instantly to coordinates (0ms, multi-monitor safe)."""
         ctypes.windll.user32.SetCursorPos(int(x), int(y))
 
     def _hardware_click(self, hold_s: float = 0.005) -> None:
-        """Nhấn chuột trái duy nhất 1 lần tại vị trí hiện tại (~5ms)."""
+        """Single left hardware click at current position (~5ms)."""
         ctypes.windll.user32.mouse_event(0x0002, 0, 0, 0, 0)  # MOUSEEVENTF_LEFTDOWN
         time.sleep(hold_s)
         ctypes.windll.user32.mouse_event(0x0004, 0, 0, 0, 0)  # MOUSEEVENTF_LEFTUP
@@ -330,7 +331,7 @@ class SOPFormFiller:
             self._hardware_click(hold_s=0.005)
             time.sleep(self.CLICK_DELAY)
         except Exception as e:
-            print(f"[SOP] Lỗi click: {e}")
+            print(f"[SOP] Click error: {e}")
 
     def _click_xy(self, x: int, y: int) -> None:
         try:
@@ -339,10 +340,10 @@ class SOPFormFiller:
             self._hardware_click(hold_s=0.005)
             time.sleep(self.OPTION_DELAY)
         except Exception as e:
-            print(f"[SOP] Lỗi click_xy: {e}")
+            print(f"[SOP] Click_xy error: {e}")
 
     def _send_esc(self) -> None:
-        """Gửi phím ESC siêu tốc qua Win32 API (~15ms)."""
+        """Send fast ESC key via Win32 API (~15ms)."""
         ctypes.windll.user32.keybd_event(0x1B, 0, 0, 0)  # VK_ESCAPE DOWN
         time.sleep(0.005)
         ctypes.windll.user32.keybd_event(0x1B, 0, 2, 0)  # VK_ESCAPE UP
@@ -352,19 +353,19 @@ class SOPFormFiller:
 
     def _get_option_pos(self, field: str, option_text: str, display_id: int | None = None) -> tuple | None:
         """
-        Tính toạ độ màn hình của option trong dropdown dựa trên display_id.
+        Calculate screen coordinate for dropdown option based on display_id.
         first_option_y + index * row_height
         """
         d_id = display_id if display_id is not None else self._cfg.get_active_display()
         geom = self._cfg.get_dropdown_geometry(d_id).get(field)
         if not geom:
-            print(f"[SOP] WARN: Chưa calibrate options cho '{field}' (Màn {d_id})!")
-            print(f"[SOP]       Chạy: python sop_main.py calibrate_options --display {d_id}")
+            print(f"[SOP] WARN: Dropdown options not calibrated for '{field}' (Display {d_id})!")
+            print(f"[SOP]       Run: python sop_main.py calibrate_options --display {d_id}")
             return None
 
         options_list = DROPDOWN_OPTIONS.get(field, [])
         if option_text not in options_list:
-            print(f"[SOP] WARN: '{option_text}' không có trong DROPDOWN_OPTIONS['{field}']!")
+            print(f"[SOP] WARN: '{option_text}' not found in DROPDOWN_OPTIONS['{field}']!")
             return None
 
         idx = options_list.index(option_text)
@@ -419,9 +420,9 @@ class SOPFormFiller:
 
     def _ensure_window_focus(self, coords: dict) -> None:
         """
-        Kích hoạt cửa sổ Teleops trước khi click dropdown:
-        1. Gọi Win32 SetForegroundWindow vào cửa sổ chứa form.
-        2. Click nhẹ vào phần nhãn text 'Vision Functionality :' ở bên trái ô nhập.
+        Activate Teleops window before clicking dropdown:
+        1. Call Win32 SetForegroundWindow on form window.
+        2. Click on the text label 'Vision Functionality :' to the left of the field.
         """
         vf = coords.get("vision_functionality", {"x": 252, "y": 638})
         vx = int(vf.get("x", 252))
@@ -458,7 +459,7 @@ class SOPFormFiller:
         t_start = time.perf_counter()
         d_id = display_id if display_id is not None else self._cfg.get_active_display()
 
-        # Nhả các phím modifier (Alt, Ctrl, Shift)
+        # Release modifier keys (Alt, Ctrl, Shift)
         time.sleep(0.003)
         ctypes.windll.user32.keybd_event(0x12, 0, 2, 0)  # VK_MENU (Alt) UP
         ctypes.windll.user32.keybd_event(0x11, 0, 2, 0)  # VK_CONTROL UP
@@ -467,16 +468,16 @@ class SOPFormFiller:
 
         coords = self._cfg.get_form_coords(d_id)
         if not self._cfg.is_calibrated(d_id):
-            err_msg = f"Màn hình {d_id} chưa calibrate! Chạy: python sop_main.py calibrate --display {d_id}"
+            err_msg = f"Display {d_id} not calibrated! Run: python sop_main.py calibrate --display {d_id}"
             print(f"\n[SOP] ❌ {err_msg}\n")
             if on_status:
-                on_status("error", f"Màn {d_id} chưa Calibrate!")
+                on_status("error", f"Display {d_id} not calibrated!")
             return False
 
         if on_status:
-            on_status("busy", f"Màn {d_id}: {case.name}")
+            on_status("busy", f"Disp {d_id}: {case.name}")
 
-        print(f"\n[SOP] >>> [MÀN HÌNH {d_id}] {case.name}")
+        print(f"\n[SOP] >>> [DISPLAY {d_id}] {case.name}")
 
         try:
             self._ensure_window_focus(coords)
@@ -484,7 +485,7 @@ class SOPFormFiller:
             # ── Vision Functionality ──────────────────────────────────────────
             if case.vision_functionality:
                 if on_status:
-                    on_status("detail", f"[Màn {d_id}] Vision: {case.vision_functionality}")
+                    on_status("detail", f"[Disp {d_id}] Vision: {case.vision_functionality}")
                 print(f"[SOP]  Vision  : {case.vision_functionality}")
                 self._select_single(
                     "vision_functionality",
@@ -498,7 +499,7 @@ class SOPFormFiller:
                 opts = case.actions_required if isinstance(case.actions_required, list) \
                        else [case.actions_required]
                 if on_status:
-                    on_status("detail", f"[Màn {d_id}] Actions: {', '.join(opts)}")
+                    on_status("detail", f"[Disp {d_id}] Actions: {', '.join(opts)}")
                 print(f"[SOP]  Actions : {', '.join(opts)}")
                 self._select_multi(
                     "actions_required",
@@ -510,7 +511,7 @@ class SOPFormFiller:
             # ── Maintenance Issues ────────────────────────────────────────────
             if case.maintenance_issues:
                 if on_status:
-                    on_status("detail", f"[Màn {d_id}] Maint: {case.maintenance_issues}")
+                    on_status("detail", f"[Disp {d_id}] Maint: {case.maintenance_issues}")
                 print(f"[SOP]  Maint   : {case.maintenance_issues}")
                 self._select_multi(
                     "maintenance_issues",
@@ -522,7 +523,7 @@ class SOPFormFiller:
             # ── Resolution ────────────────────────────────────────────────────
             if case.resolution:
                 if on_status:
-                    on_status("detail", f"[Màn {d_id}] Resol: {case.resolution}")
+                    on_status("detail", f"[Disp {d_id}] Resol: {case.resolution}")
                 print(f"[SOP]  Resol   : {case.resolution}")
                 self._select_single(
                     "resolution",
@@ -534,20 +535,20 @@ class SOPFormFiller:
             # ── Comment ───────────────────────────────────────────────────────
             if case.comment:
                 if on_status:
-                    on_status("detail", f"[Màn {d_id}] Comment: {case.comment}")
+                    on_status("detail", f"[Disp {d_id}] Comment: {case.comment}")
                 print(f"[SOP]  Comment : {case.comment}")
                 self._fill_comment(case.comment, coords)
 
             t_elapsed = time.perf_counter() - t_start
-            print(f"[SOP] DONE (Màn {d_id}) in {t_elapsed:.2f}s: {case.name}\n")
+            print(f"[SOP] DONE (Display {d_id}) in {t_elapsed:.2f}s: {case.name}\n")
             if on_status:
-                on_status("done", f"Màn {d_id} hoàn tất ({t_elapsed:.2f}s)")
+                on_status("done", f"Display {d_id} completed ({t_elapsed:.2f}s)")
             return True
 
         except Exception as e:
-            print(f"[SOP] ERROR (Màn {d_id}): {e}\n")
+            print(f"[SOP] ERROR (Display {d_id}): {e}\n")
             if on_status:
-                on_status("error", f"Lỗi: {e}")
+                on_status("error", f"Error: {e}")
             return False
 
 
@@ -635,8 +636,8 @@ class SOPHotkeyThread(threading.Thread):
 
 class SOPHotkeyManager:
     """
-    Quản lý hotkey riêng cho SOP tool.
-    Hỗ trợ các phím đơn (Insert, Home, PageUp, PageDown, End), phím chuyển màn hình (F6), và tổ hợp.
+    Dedicated hotkey manager for the SOP tool.
+    Supports single keys (Insert, Home, PageUp, PageDown, End), display toggle (F6), and combinations.
     """
 
     def __init__(
@@ -682,16 +683,16 @@ class SOPHotkeyManager:
 
                 print(f"[SOP HK] {display:14} -> {case.name}")
 
-        # Hotkey chuyển đổi màn hình (Toggle Display - F6)
+        # Hotkey for toggle display (Toggle Display - F6)
         if self._on_toggle_display:
             toggle_combo = self._hk_cfg.get("toggle_display", "f6")
             t_mods, t_vk = _parse_key(toggle_combo)
             if t_vk:
                 hotkeys[hk_id] = (t_mods, t_vk, self._on_toggle_display)
                 hk_id += 1
-                print(f"[SOP HK] {toggle_combo.upper():14} -> Chuyển đổi Màn hình")
+                print(f"[SOP HK] {toggle_combo.upper():14} -> Toggle Display")
 
-        # Hotkey chuyển đổi loại SOP (Toggle SOP Type SUSPECT <-> CHRF - nếu có trong config)
+        # Hotkey for toggle SOP type (SUSPECT <-> CHRF)
         if self._on_toggle_sop_type:
             type_combo = self._hk_cfg.get("toggle_type")
             if type_combo:
@@ -699,7 +700,7 @@ class SOPHotkeyManager:
                 if tp_vk:
                     hotkeys[hk_id] = (tp_mods, tp_vk, self._on_toggle_sop_type)
                     hk_id += 1
-                    print(f"[SOP HK] {type_combo.upper():14} -> Chuyển đổi Loại SOP (SUSPECT <-> CHRF)")
+                    print(f"[SOP HK] {type_combo.upper():14} -> Toggle SOP Type (SUSPECT <-> CHRF)")
 
         # Exit hotkey
         exit_combo = self._hk_cfg.get("exit", "ctrl+esc")
@@ -717,7 +718,7 @@ class SOPHotkeyManager:
             else:
                 with self._lock:
                     if self._busy:
-                        print("[SOP] Đang bận điền form, bỏ qua...")
+                        print("[SOP] Busy filling form, skipping...")
                         return
                     self._busy = True
                 try:

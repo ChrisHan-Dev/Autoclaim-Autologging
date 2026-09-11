@@ -1,53 +1,70 @@
 @echo off
-title Cai dat Auto-Claim Teleops
+title Install Auto-Claim Dependencies
 cd /d "%~dp0"
 
 echo =======================================================
-echo   CAI DAT THU VIEN CHO AUTO-CLAIM (OCR & VISION)
+echo   INSTALLING DEPENDENCIES FOR AUTO-CLAIM: OCR AND VISION
 echo =======================================================
 echo.
 
-:: Tu dong tim va them duong dan Python vao PATH
-for %%v in (314 313 312 311 310) do (
-    if exist "%LOCALAPPDATA%\Programs\Python\Python%%v" (
-        set "PATH=%LOCALAPPDATA%\Programs\Python\Python%%v;%LOCALAPPDATA%\Programs\Python\Python%%v\Scripts;%PATH%"
-    )
-    if exist "C:\Program Files\Python%%v" (
-        set "PATH=C:\Program Files\Python%%v;C:\Program Files\Python%%v\Scripts;%PATH%"
-    )
+:: Detect Python
+set "PY_CMD="
+python --version >nul 2>&1
+if not errorlevel 1 set "PY_CMD=python"
+
+if not defined PY_CMD (
+    py -3 --version >nul 2>&1
+    if not errorlevel 1 set "PY_CMD=py -3"
 )
 
-:: Kiem tra Python
-python --version >nul 2>&1
-if %errorLevel% neq 0 (
-    echo [LOI] Khong tim thay Python tren may tinh cua ban!
-    echo Vui long cai dat Python 3.10 tro len tai: https://www.python.org/
-    echo LUU Y: Nho tich chon vao o "Add Python to PATH" khi cai dat.
+if not defined PY_CMD if exist "%LOCALAPPDATA%\Programs\Python\Python311\python.exe" set "PY_CMD=%LOCALAPPDATA%\Programs\Python\Python311\python.exe"
+if not defined PY_CMD if exist "%LOCALAPPDATA%\Programs\Python\Python312\python.exe" set "PY_CMD=%LOCALAPPDATA%\Programs\Python\Python312\python.exe"
+if not defined PY_CMD if exist "%LOCALAPPDATA%\Programs\Python\Python313\python.exe" set "PY_CMD=%LOCALAPPDATA%\Programs\Python\Python313\python.exe"
+if not defined PY_CMD if exist "%LOCALAPPDATA%\Programs\Python\Python314\python.exe" set "PY_CMD=%LOCALAPPDATA%\Programs\Python\Python314\python.exe"
+if not defined PY_CMD if exist "%LOCALAPPDATA%\Programs\Python\Python310\python.exe" set "PY_CMD=%LOCALAPPDATA%\Programs\Python\Python310\python.exe"
+
+if not defined PY_CMD if exist "%USERPROFILE%\AppData\Local\Programs\Python\Python311\python.exe" set "PY_CMD=%USERPROFILE%\AppData\Local\Programs\Python\Python311\python.exe"
+if not defined PY_CMD if exist "%USERPROFILE%\AppData\Local\Programs\Python\Python312\python.exe" set "PY_CMD=%USERPROFILE%\AppData\Local\Programs\Python\Python312\python.exe"
+if not defined PY_CMD if exist "%USERPROFILE%\AppData\Local\Programs\Python\Python313\python.exe" set "PY_CMD=%USERPROFILE%\AppData\Local\Programs\Python\Python313\python.exe"
+
+if not defined PY_CMD if exist "C:\Program Files\Python311\python.exe" set "PY_CMD=C:\Program Files\Python311\python.exe"
+if not defined PY_CMD if exist "C:\Program Files\Python312\python.exe" set "PY_CMD=C:\Program Files\Python312\python.exe"
+if not defined PY_CMD if exist "C:\Program Files\Python313\python.exe" set "PY_CMD=C:\Program Files\Python313\python.exe"
+
+if not defined PY_CMD (
+    echo =======================================================
+    echo   [ERROR] Python was not found on this computer!
+    echo =======================================================
+    echo Please install Python 3.10 or newer from: https://www.python.org/
+    echo Remember to check "Add Python to PATH" during installation.
     echo.
     pause
-    exit /b
+    exit /b 1
 )
 
-echo [1/2] Kiem tra phien ban Python...
-python --version
+echo [1/2] Checking Python version...
+"%PY_CMD%" --version
 echo.
 
-echo [2/2] Dang cai dat thu vien Auto-Claim (EasyOCR, OpenCV, MSS, numpy...)...
-echo (Qua trinh nay co the mat 1-3 phut tuy toc do mang)...
-python -m pip install -r auto_claim/requirements.txt
-
-if %errorLevel% equ 0 (
+echo [2/2] Installing Auto-Claim dependencies: EasyOCR, OpenCV, MSS, numpy...
+echo Note: This may take 1-3 minutes depending on your internet connection.
+echo.
+"%PY_CMD%" -m pip install -r auto_claim/requirements.txt
+if errorlevel 1 (
     echo.
-    echo =======================================================
-    echo   [THANH CONG] CAI DAT AUTO-CLAIM HOAN TAT!
-    echo =======================================================
-    echo Ban da co the su dung ngay:
-    echo   - Click dup vao: Run_AutoClaim_Admin.bat de mo tool.
+    echo [ERROR] An error occurred during installation.
+    echo Please check your internet connection and try again.
     echo.
-) else (
-    echo.
-    echo [LOI] Co van de xay ra trong qua trinh cai dat.
-    echo.
+    pause
+    exit /b 1
 )
+
+echo.
+echo =======================================================
+echo   [SUCCESS] AUTO-CLAIM INSTALLATION COMPLETE!
+echo =======================================================
+echo You can now use Auto-Claim:
+echo   - Double-click: Run_AutoClaim_Admin.bat to open the tool.
+echo.
 
 pause

@@ -1,6 +1,7 @@
 """
 status_window.py — Floating Status HUD
 A compact, draggable, always-on-top window showing live automation status.
+Includes Home / Office profile switcher for instant layout switching.
 
 Runs on the main thread and polls a ui_queue for events.
 """
@@ -55,7 +56,7 @@ class StatusWindow:
     """
 
     WINDOW_WIDTH = 270
-    WINDOW_HEIGHT = 150
+    WINDOW_HEIGHT = 185  # expanded to fit profile bar
 
     def __init__(self, cfg) -> None:
         self.cfg = cfg
@@ -85,8 +86,10 @@ class StatusWindow:
         # Initial position from config
         self._x = self.cfg.get("status_window_x", 100)
         self._y = self.cfg.get("status_window_y", 100)
-        
+
         self._lock = threading.Lock()
+        # Profile bar buttons {profile_name: tk.Label}
+        self._profile_btns: dict[str, tk.Label] = {}
 
     # ------------------------------------------------------------------
     # Public thread-safe API
@@ -122,6 +125,73 @@ class StatusWindow:
                 self._root.after(0, self._root.quit)
             except Exception:
                 pass
+
+    # ------------------------------------------------------------------
+    # Profile API
+    # ------------------------------------------------------------------
+
+    def switch_profile(self, name: str) -> None:
+        """Switch to a named profile in-process and refresh the UI buttons."""
+        try:
+            self.cfg.switch_profile(name)
+        except KeyError as exc:
+            print(f"[StatusWindow] Profile error: {exc}")
+            return
+        if self._root:
+            try:
+                self._root.after(0, self._update_profile_selector_ui)
+            except Exception:
+                pass
+
+    def _update_profile_selector_ui(self) -> None:
+        """Highlight the active profile button (call from main thread only)."""
+        active = self.cfg.get_active_profile()
+        icons = {"home": "🏠", "office": "🏢"}
+        for pname, btn in self._profile_btns.items():
+            icon = icons.get(pname, "📌")
+            label = f"{icon} {pname.upper()}"
+            if pname == active:
+                btn.config(text=f"{label} ✔", bg="#0f3460", fg="#00e5ff")
+            else:
+                btn.config(text=label, bg="#1f2438", fg="#8a8aab")
+
+    def _popup_profile_save_menu(self, event: tk.Event, profile_name: str) -> None:
+        """Right-click context menu on a profile button."""
+        if not self._root:
+            return
+        menu = tk.Menu(
+            self._root, tearoff=0,
+            bg="#1a1a2e", fg="#e0e0e0",
+            activebackground="#0f3460", activeforeground="#00e5ff",
+            activeborderwidth=0, bd=1, font=("Segoe UI", 9),
+        )
+        icon = "🏠" if profile_name == "home" else "🏢"
+        menu.add_command(
+            label=f"{icon} Switch to {profile_name.upper()}",
+            command=lambda: self.switch_profile(profile_name),
+        )
+        menu.add_separator()
+        menu.add_command(
+            label=f"💾 Save current layout to {profile_name.upper()}",
+            command=lambda: self._save_to_profile(profile_name),
+        )
+        try:
+            x = event.widget.winfo_rootx()
+            y = event.widget.winfo_rooty() + event.widget.winfo_height() + 2
+            menu.post(x, y)
+        except Exception:
+            pass
+
+    def _save_to_profile(self, name: str) -> None:
+        """Save current calibration into the named profile."""
+        try:
+            self.cfg.save_profile(name)
+            self.cfg.switch_profile(name)
+            if self._root:
+                self._root.after(0, self._update_profile_selector_ui)
+            print(f"[StatusWindow] Saved profile '{name}'")
+        except Exception as exc:
+            print(f"[StatusWindow] Error saving profile: {exc}")
 
     # ------------------------------------------------------------------
     # Main Thread Run
@@ -204,6 +274,38 @@ class StatusWindow:
             padx=10,
         ).pack(side="left", pady=4)
 
+        # ── Profile Selector Bar (Home / Office) ──────────────────────────
+        profile_bar = tk.Frame(root, bg=_C["bg"], padx=8, pady=2)
+        profile_bar.pack(fill="x")
+
+        tk.Label(
+            profile_bar, text="🆔 PROFILE:",
+            bg=_C["bg"], fg=_C["fg_dim"],
+            font=("Segoe UI", 7, "bold"),
+        ).pack(side="left", padx=(0, 4))
+
+        profile_container = tk.Frame(profile_bar, bg="#1a1a2e", padx=2, pady=1)
+        profile_container.pack(fill="x", expand=True)
+
+        _icons = {"home": "🏠", "office": "🏢"}
+        active_profile = self.cfg.get_active_profile()
+        for pname in self.cfg.list_profiles():
+            icon = _icons.get(pname, "📌")
+            is_active = (pname == active_profile)
+            label_text = f"{icon} {pname.upper()}" + (" ✔" if is_active else "")
+            pbtn = tk.Label(
+                profile_container,
+                text=label_text,
+                font=("Segoe UI", 8, "bold"),
+                bg="#0f3460" if is_active else "#1f2438",
+                fg="#00e5ff" if is_active else "#8a8aab",
+                padx=8, pady=2, cursor="hand2",
+            )
+            pbtn.pack(side="left", fill="x", expand=True, padx=1)
+            pbtn.bind("<Button-1>", lambda _, n=pname: self.switch_profile(n))
+            pbtn.bind("<Button-3>", lambda e, n=pname: self._popup_profile_save_menu(e, n))
+            self._profile_btns[pname] = pbtn
+
         # ── Body Content ───────────────────────────────────────────────
         body = tk.Frame(root, bg=_C["bg"], padx=10, pady=8)
         body.pack(fill="both", expand=True)
@@ -244,7 +346,7 @@ class StatusWindow:
         avoid_str = ",".join(blocklist) if blocklist else "None"
         if len(avoid_str) > 12:
             avoid_str = avoid_str[:10] + ".."
-        tk.Label(f_avoid, text=f"Né: {avoid_str}", bg=_C["bg"], fg=_C["yellow"], font=("Segoe UI", 9)).pack(side="left")
+        tk.Label(f_avoid, text=f"Avoid: {avoid_str}", bg=_C["bg"], fg=_C["yellow"], font=("Segoe UI", 9)).pack(side="left")
 
         # Row 3: Status Message (wrapped)
         row3 = tk.Frame(body, bg=_C["bg"])

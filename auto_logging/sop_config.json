@@ -1,28 +1,28 @@
 {
   "form_coords": {
     "vision_functionality": {
-      "x": 252,
-      "y": 638
+      "x": 2197,
+      "y": 636
     },
     "actions_required": {
-      "x": 256,
-      "y": 684
+      "x": 2197,
+      "y": 678
     },
     "maintenance_issues": {
-      "x": 260,
-      "y": 722
+      "x": 2197,
+      "y": 723
     },
     "resolution": {
-      "x": 254,
-      "y": 769
+      "x": 2199,
+      "y": 766
     },
     "comment": {
-      "x": 267,
-      "y": 815
+      "x": 2196,
+      "y": 812
     },
     "send_button": {
-      "x": 339,
-      "y": 896
+      "x": 2275,
+      "y": 870
     }
   },
   "hotkeys": {
@@ -55,28 +55,28 @@
   },
   "dropdown_geometry": {
     "vision_functionality": {
-      "first_option_x": 305,
+      "first_option_x": 2171,
       "first_option_y": 648,
-      "row_height": 19
+      "row_height": 22
     },
     "actions_required": {
-      "first_option_x": 206,
+      "first_option_x": 2177,
       "first_option_y": 702,
       "row_height": 21
     },
     "maintenance_issues": {
-      "first_option_x": 230,
+      "first_option_x": 2181,
       "first_option_y": 745,
-      "row_height": 20
+      "row_height": 19
     },
     "resolution": {
-      "first_option_x": 239,
-      "first_option_y": 765,
-      "row_height": 25
+      "first_option_x": 2184,
+      "first_option_y": 767,
+      "row_height": 24
     }
   },
-  "hud_x": 914,
-  "hud_y": 298,
+  "hud_x": 2131,
+  "hud_y": 97,
   "active_display": 4,
   "active_pair": [
     4,
@@ -85,7 +85,7 @@
   "active_sop_type": "SUSPECT",
   "displays": {
     "4": {
-      "name": "Màn hình 4 (Main)",
+      "name": "Display 4 (Main)",
       "form_coords": {
         "vision_functionality": {
           "x": 252,
@@ -136,7 +136,7 @@
       }
     },
     "3": {
-      "name": "Màn hình 3 (Phụ)",
+      "name": "Display 3 (Secondary)",
       "form_coords": {
         "vision_functionality": {
           "x": 2197,
@@ -187,12 +187,12 @@
       }
     },
     "1": {
-      "name": "Màn hình 1",
+      "name": "Display 1",
       "form_coords": {},
       "dropdown_geometry": {}
     },
     "2": {
-      "name": "Màn hình 2",
+      "name": "Display 2",
       "form_coords": {
         "vision_functionality": {
           "x": 0,
@@ -221,5 +221,285 @@
       },
       "dropdown_geometry": {}
     }
-  }
+  },
+  "profiles": {
+    "office": {
+      "displays": {
+        "4": {
+          "name": "Display 4 (Main)",
+          "form_coords": {
+            "vision_functionality": {
+              "x": 252,
+              "y": 638
+            },
+            "actions_required": {
+              "x": 256,
+              "y": 684
+            },
+            "maintenance_issues": {
+              "x": 260,
+              "y": 722
+            },
+            "resolution": {
+              "x": 254,
+              "y": 769
+            },
+            "comment": {
+              "x": 267,
+              "y": 815
+            },
+            "send_button": {
+              "x": 339,
+              "y": 896
+            }
+          },
+          "dropdown_geometry": {
+            "vision_functionality": {
+              "first_option_x": 305,
+              "first_option_y": 648,
+              "row_height": 19
+            },
+            "actions_required": {
+              "first_option_x": 206,
+              "first_option_y": 702,
+              "row_height": 21
+            },
+            "maintenance_issues": {
+              "first_option_x": 230,
+              "first_option_y": 745,
+              "row_height": 20
+            },
+            "resolution": {
+              "first_option_x": 239,
+              "first_option_y": 765,
+              "row_height": 25
+            }
+          }
+        },
+        "3": {
+          "name": "Display 3 (Secondary)",
+          "form_coords": {
+            "vision_functionality": {
+              "x": 2197,
+              "y": 636
+            },
+            "actions_required": {
+              "x": 2197,
+              "y": 678
+            },
+            "maintenance_issues": {
+              "x": 2197,
+              "y": 723
+            },
+            "resolution": {
+              "x": 2199,
+              "y": 766
+            },
+            "comment": {
+              "x": 2196,
+              "y": 812
+            },
+            "send_button": {
+              "x": 2275,
+              "y": 870
+            }
+          },
+          "dropdown_geometry": {
+            "vision_functionality": {
+              "first_option_x": 2171,
+              "first_option_y": 648,
+              "row_height": 22
+            },
+            "actions_required": {
+              "first_option_x": 2177,
+              "first_option_y": 702,
+              "row_height": 21
+            },
+            "maintenance_issues": {
+              "first_option_x": 2181,
+              "first_option_y": 745,
+              "row_height": 19
+            },
+            "resolution": {
+              "first_option_x": 2184,
+              "first_option_y": 767,
+              "row_height": 24
+            }
+          }
+        },
+        "1": {
+          "name": "Display 1",
+          "form_coords": {},
+          "dropdown_geometry": {}
+        },
+        "2": {
+          "name": "Display 2",
+          "form_coords": {
+            "vision_functionality": {
+              "x": 0,
+              "y": 0
+            },
+            "actions_required": {
+              "x": 0,
+              "y": 0
+            },
+            "maintenance_issues": {
+              "x": 0,
+              "y": 0
+            },
+            "resolution": {
+              "x": 0,
+              "y": 0
+            },
+            "comment": {
+              "x": 0,
+              "y": 0
+            },
+            "send_button": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "dropdown_geometry": {}
+        }
+      },
+      "active_display": 4,
+      "active_pair": [
+        4,
+        3
+      ],
+      "active_sop_type": "SUSPECT"
+    },
+    "home": {
+      "displays": {
+        "1": {
+          "name": "Display 1",
+          "form_coords": {
+            "vision_functionality": {
+              "x": 0,
+              "y": 0
+            },
+            "actions_required": {
+              "x": 0,
+              "y": 0
+            },
+            "maintenance_issues": {
+              "x": 0,
+              "y": 0
+            },
+            "resolution": {
+              "x": 0,
+              "y": 0
+            },
+            "comment": {
+              "x": 0,
+              "y": 0
+            },
+            "send_button": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "dropdown_geometry": {}
+        },
+        "2": {
+          "name": "Display 2",
+          "form_coords": {
+            "vision_functionality": {
+              "x": 0,
+              "y": 0
+            },
+            "actions_required": {
+              "x": 0,
+              "y": 0
+            },
+            "maintenance_issues": {
+              "x": 0,
+              "y": 0
+            },
+            "resolution": {
+              "x": 0,
+              "y": 0
+            },
+            "comment": {
+              "x": 0,
+              "y": 0
+            },
+            "send_button": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "dropdown_geometry": {}
+        },
+        "3": {
+          "name": "Display 3 (Secondary)",
+          "form_coords": {
+            "vision_functionality": {
+              "x": 0,
+              "y": 0
+            },
+            "actions_required": {
+              "x": 0,
+              "y": 0
+            },
+            "maintenance_issues": {
+              "x": 0,
+              "y": 0
+            },
+            "resolution": {
+              "x": 0,
+              "y": 0
+            },
+            "comment": {
+              "x": 0,
+              "y": 0
+            },
+            "send_button": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "dropdown_geometry": {}
+        },
+        "4": {
+          "name": "Display 4 (Main)",
+          "form_coords": {
+            "vision_functionality": {
+              "x": 0,
+              "y": 0
+            },
+            "actions_required": {
+              "x": 0,
+              "y": 0
+            },
+            "maintenance_issues": {
+              "x": 0,
+              "y": 0
+            },
+            "resolution": {
+              "x": 0,
+              "y": 0
+            },
+            "comment": {
+              "x": 0,
+              "y": 0
+            },
+            "send_button": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "dropdown_geometry": {}
+        }
+      },
+      "active_display": 4,
+      "active_pair": [
+        4,
+        3
+      ],
+      "active_sop_type": "SUSPECT"
+    }
+  },
+  "active_profile": "office"
 }

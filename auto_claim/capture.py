@@ -78,7 +78,7 @@ class ScreenCapture:
         Returns
         -------
         np.ndarray
-            BGR image (height × width × 3).
+            BGR image (height x width x 3).
         """
         return self._grab(self._region)
 

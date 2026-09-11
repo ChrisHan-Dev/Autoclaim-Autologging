@@ -1,12 +1,12 @@
 # ============================================================
 # Teleops Auto-Claim — Vision & OCR Dependencies
 # ============================================================
-# Dành riêng cho công cụ tự động quét màn hình & nhận bot Teleops.
-# Tương thích: Python 3.10 – 3.14 (Khuyến nghị 3.12 - 3.14)
+# Automated screen monitoring and bot-claiming tool for Teleops.
+# Compatible: Python 3.10 – 3.14 (Recommended 3.12 - 3.14)
 #
-# Cách cài đặt:
+# Installation:
 #   pip install -r auto_claim/requirements.txt
-# Hoặc click đúp file:
+# Or double-click:
 #   Install_AutoClaim.bat
 # ============================================================
 
@@ -18,11 +18,11 @@ numpy>=2.0.0
 opencv-python>=4.8.0
 Pillow>=10.0.0
 
-# OCR Reader (Nhận dạng chữ CLAIM trên màn hình)
+# OCR Reader (Recognizes CLAIM text on screen)
 easyocr>=1.7.2
 
 # Mouse & Keyboard automation
 pyautogui>=0.9.54
 
-# Fast string matching (Khớp username và keyword)
+# Fast string matching (Matches username and keywords)
 rapidfuzz>=3.0.0

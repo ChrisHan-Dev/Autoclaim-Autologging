@@ -1,25 +1,26 @@
 """
 sop_main.py — SOP Logging Automation (Multi-Display Support)
 ============================================================
-Chạy RIÊNG, KHÔNG cần main.py đang chạy.
-Hỗ trợ quản lý độc lập các Màn hình (Màn 4 Main và Màn 3) với 1 Popup HUD duy nhất.
+Runs STANDALONE, independent of auto_claim main.py.
+Supports independent display management (Display 4 Main & Display 3) with a single Popup HUD.
 
-Lệnh:
-  python sop_main.py                                   # Chạy SOP auto-logging (HUD + Hotkeys)
-  python sop_main.py calibrate [--display 3|4]        # Hiệu chỉnh toạ độ form SOP cho Màn 3 hoặc Màn 4
-  python sop_main.py calibrate_options [--display 3|4]# Hiệu chỉnh toạ độ dropdown options
-  python sop_main.py status                            # Xem config SOP hiện tại
-  python sop_main.py test --case 1 [--display 3|4]     # Test trực tiếp
+Commands:
+  python sop_main.py                                   # Run SOP auto-logging (HUD + Hotkeys)
+  python sop_main.py calibrate [--display 3|4]        # Calibrate SOP form coords for Display 3 or 4
+  python sop_main.py calibrate_options [--display 3|4]# Calibrate dropdown options geometry
+  python sop_main.py status                            # View current SOP config
+  python sop_main.py test --case 1 [--display 3|4]     # Direct test filling a case
 
-Hotkey mặc định:
-  F6      — Đổi qua lại Màn 4 (Main) <-> Màn 3 (Phụ)
+Default hotkeys:
+  F6      — Toggle between displays in the active cycle
+  F7      — Toggle SOP Type (SUSPECT <-> CHRF)
   Insert  — Fill Case 1
   Home    — Fill Case 2
   PageUp  — Fill Case 3
   PageDown— Fill Case 4
   End     — Fill Case 5
   Delete  — Fill Case 6
-  Ctrl+ESC— Thoát
+  Ctrl+ESC— Exit
 """
 
 import sys
@@ -27,14 +28,14 @@ import argparse
 import signal
 import threading
 import time
+import os
 
 try:
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 except Exception:
     pass
 
-# Thêm thư mục gốc vào path
-import os
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
@@ -59,30 +60,29 @@ def print_banner(cfg: SOPConfig) -> None:
     hk = cfg.hotkeys_cfg
     active_disp = cfg.get_active_display()
     active_type = cfg.get_active_sop_type()
+    active_prof = cfg.get_active_profile()
     pair = cfg.get_active_pair()
-    d1, d2 = pair[0], pair[1]
-
-    c1 = cfg.is_calibrated(d1)
-    c2 = cfg.is_calibrated(d2)
-    g1 = bool(cfg.get_dropdown_geometry(d1))
-    g2 = bool(cfg.get_dropdown_geometry(d2))
-
-    n1 = f"Màn {d1}"
-    n2 = f"Màn {d2}"
 
     print("\n" + "=" * 60)
     print("  📋 [SOP] SOP Logging Automation (Multi-Display & Multi-Type)")
     print("=" * 60)
     print(f"  Config       : {cfg._path}")
     print(f"  Admin        : {'[OK] Running as Administrator' if is_admin() else '[WARN] Standard User'}")
-    print(f"  Active Màn   : MÀN HÌNH {active_disp}")
-    print(f"  Active Type  : [{active_type}] (Có thể đổi qua dropdown trên HUD)")
-    print(f"  {n1:12} : Form: {'[OK]' if c1 else '[--] Chưa calib'} | Options: {'[OK]' if g1 else '[--] Chưa calib'}")
-    print(f"  {n2:12} : Form: {'[OK]' if c2 else '[--] Chưa calib'} | Options: {'[OK]' if g2 else '[--] Chưa calib'}")
+    print(f"  Profile      : [{active_prof.upper()}] (Switch via HUD or --profile)")
+    print(f"  Active Disp  : DISPLAY {active_disp}")
+    print(f"  Active Type  : [{active_type}] (Switch via HUD dropdown)")
+    for d in pair:
+        c = cfg.is_calibrated(d)
+        g = bool(cfg.get_dropdown_geometry(d))
+        nd = f"Display {d}"
+        form_status = "[OK]" if c else "[--] Not calibrated"
+        opt_status = "[OK]" if g else "[--] Not calibrated"
+        print(f"  {nd:12} : Form: {form_status} | Options: {opt_status}")
     print()
-    print("  -- Phím tắt -------------------------------------------------------------")
+    print("  -- Hotkeys -------------------------------------------------------------")
     toggle_key = hk.get("toggle_display", "f6").upper()
-    print(f"  {toggle_key:10} -> Chuyển đổi Màn {d1} <-> Màn {d2}")
+    cycle_str = " <-> ".join(f"Disp {d}" for d in pair) if len(pair) > 1 else f"Disp {pair[0]}"
+    print(f"  {toggle_key:10} -> Switch {cycle_str}")
     if active_type == "CHRF":
         print(f"  {'INSERT':10} -> CHRF 1 (Align + Place / Success)")
         print(f"  {'HOME':10} -> CHRF 2 (Home actuator / Success)")
@@ -95,7 +95,7 @@ def print_banner(cfg: SOPConfig) -> None:
             key_name = hk.get(f"case_{i}", key_default).upper()
             print(f"  {key_name:10} -> {case.name}")
     print()
-    print(f"  {'Ctrl+ESC':10} -> Thoát")
+    print(f"  {'Ctrl+ESC':10} -> Exit")
     print("=" * 60 + "\n")
 
 
@@ -107,13 +107,14 @@ def cmd_status(cfg: SOPConfig) -> None:
     print("\n=== SOP Config Status (Multi-Display & Multi-Type) ===")
     print(f"  File         : {cfg._path}")
     print(f"  Admin        : {'YES (Administrator)' if is_admin() else 'NO (Standard User)'}")
-    print(f"  Active Màn   : Màn hình {cfg.get_active_display()}")
+    print(f"  Active Profile: {cfg.get_active_profile().upper()}")
+    print(f"  Active Disp  : Display {cfg.get_active_display()}")
     print(f"  Active Type  : {cfg.get_active_sop_type()}")
     print()
 
     pair = cfg.get_active_pair()
     for d in pair:
-        name = f"Màn hình {d}"
+        name = f"Display {d}"
         cal = "YES" if cfg.is_calibrated(d) else "NO"
         geom_ok = "YES" if bool(cfg.get_dropdown_geometry(d)) else "NO"
         print(f"── [{name}] ── Form Calibrated: {cal} | Options Calibrated: {geom_ok}")
@@ -125,8 +126,8 @@ def cmd_status(cfg: SOPConfig) -> None:
 
     print("  Hotkeys:")
     hk = cfg.hotkeys_cfg
-    d1, d2 = pair[0], pair[1]
-    print(f"    {hk.get('toggle_display', 'f6').upper():10} -> Đổi Màn {d1} <-> Màn {d2}")
+    cycle_str = " <-> ".join(f"Disp {d}" for d in pair) if len(pair) > 1 else f"Disp {pair[0]}"
+    print(f"    {hk.get('toggle_display', 'f6').upper():10} -> Switch {cycle_str}")
     print("    [SUSPECT]")
     for i, (key_default, case) in enumerate(SUSPECT_CASES.items(), start=1):
         cfg_key = f"case_{i}"
@@ -138,7 +139,7 @@ def cmd_status(cfg: SOPConfig) -> None:
     print(f"      {'PAGE DN':10} -> CHRF 4 (Home / Axes not resp / CHD no payl)")
     print(f"      {'END':10} -> CHRF 5 (Home / Sensor malf / CHD no payl)")
     print(f"      {'DELETE':10} -> CHRF 6 (Align + Ext / Damaged / CHD payl)")
-    print(f"    {'Ctrl+ESC':10} -> Thoát\n")
+    print(f"    {'Ctrl+ESC':10} -> Exit\n")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -154,10 +155,10 @@ def is_admin() -> bool:
 
 
 def ensure_admin() -> None:
-    """Kiểm tra quyền Administrator và ghi chú trạng thái."""
+    """Check Administrator privileges and note status."""
     if not is_admin():
-        print("[INFO] Đang chạy dưới quyền Standard User.")
-        print("[INFO] (Để cấp quyền Admin tối đa, hãy chạy bằng Run_SOP_Admin.bat)")
+        print("[INFO] Running as Standard User.")
+        print("[INFO] (To run with full Administrator privileges, use Run_SOP_Admin.bat)")
 
 
 def disable_quick_edit() -> None:
@@ -178,17 +179,17 @@ def disable_quick_edit() -> None:
 def main() -> None:
     disable_quick_edit()
     parser = argparse.ArgumentParser(
-        description="SOP Logging Automation (Độc lập & Hỗ trợ Đa Màn hình)",
+        description="SOP Logging Automation (Standalone & Multi-Display Support)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Ví dụ:
-  python sop_main.py                             # Chạy SOP auto-logging (Popup HUD + Hotkeys)
-  python sop_main.py calibrate --display 3       # Calibrate form cho Màn 3
-  python sop_main.py calibrate --display 4       # Calibrate form cho Màn 4 (Main)
-  python sop_main.py calibrate_options --display 3# Calibrate dropdown options Màn 3
-  python sop_main.py calibrate_options --display 4# Calibrate dropdown options Màn 4
-  python sop_main.py test --case 1 --display 3   # Test điền Case 1 trên Màn 3
-  python sop_main.py status                      # Xem toạ độ các màn hình
+Examples:
+  python sop_main.py                             # Run SOP auto-logging (Popup HUD + Hotkeys)
+  python sop_main.py calibrate --display 3       # Calibrate form for Display 3
+  python sop_main.py calibrate --display 4       # Calibrate form for Display 4 (Main)
+  python sop_main.py calibrate_options --display 3# Calibrate dropdown options Display 3
+  python sop_main.py calibrate_options --display 4# Calibrate dropdown options Display 4
+  python sop_main.py test --case 1 --display 3   # Test filling Case 1 on Display 3
+  python sop_main.py status                      # View display coordinates
         """
     )
     parser.add_argument(
@@ -196,7 +197,7 @@ Ví dụ:
         nargs="?",
         default="run",
         choices=["run", "test", "calibrate", "calibrate_options", "status"],
-        help="Lệnh (mặc định: run)",
+        help="Command to run (default: run)",
     )
     parser.add_argument(
         "--display", "--monitor",
@@ -204,22 +205,28 @@ Ví dụ:
         choices=[1, 2, 3, 4],
         default=None,
         dest="display",
-        help="Chọn màn hình (1, 2, 3, hoặc 4; mặc định: theo active_display)",
+        help="Select display (1, 2, 3, or 4; default: active_display)",
     )
     parser.add_argument(
         "--pair",
-        nargs=2,
+        nargs="+",
         type=int,
         choices=[1, 2, 3, 4],
         default=None,
-        help="Chọn cặp 2 màn hình hoạt động (ví dụ: --pair 2 3)",
+        help="Select active display cycle (e.g. --pair 4 3 or --pair 2 3 4)",
+    )
+    parser.add_argument(
+        "--profile",
+        type=str,
+        default=None,
+        help="Select active profile (e.g. --profile home or --profile office)",
     )
     parser.add_argument(
         "--case",
         type=int,
         default=1,
         choices=[1, 2, 3, 4, 5, 6],
-        help="Số thứ tự case muốn test (1-6, mặc định: 1)",
+        help="Case index to test (1-6, default: 1)",
     )
     args = parser.parse_args()
 
@@ -228,10 +235,18 @@ Ví dụ:
 
     cfg = SOPConfig()
 
+    if args.profile:
+        try:
+            cfg.switch_profile(args.profile)
+            print(f"[SOP] Switched to profile: {args.profile.upper()}")
+        except KeyError as e:
+            print(f"[SOP] Warning: {e}")
+
     if args.pair:
-        cfg.set_active_pair(args.pair[0], args.pair[1])
+        cfg.set_active_pair(*args.pair)
         cfg.set_active_display(args.pair[0])
-        print(f"[SOP] Đã cập nhật cặp màn hình hoạt động: {args.pair[0]} và {args.pair[1]}")
+        pair_str = " and ".join(str(p) for p in args.pair)
+        print(f"[SOP] Updated active display list: {pair_str}")
 
     if args.display is not None and args.command == "run":
         cfg.set_active_display(args.display)
@@ -261,17 +276,17 @@ Ví dụ:
         case_key = f"f{args.case}"
         case = SOP_CASES.get(case_key, SOP_CASES["f1"])
         print("\n" + "=" * 55)
-        print(f"  🧪 TEST SOP AUTO-FILL: {case.name} (MÀN HÌNH {disp_id})")
+        print(f"  🧪 TEST SOP AUTO-FILL: {case.name} (DISPLAY {disp_id})")
         print("=" * 55)
-        print(f"  Vui lòng chuyển chuột / mở sẵn form SOP trên Màn hình {disp_id}.")
-        print("  Tool sẽ bắt đầu sau:")
+        print(f"  Please focus the mouse / open the SOP form on Display {disp_id}.")
+        print("  Tool will start in:")
         for sec in range(3, 0, -1):
             print(f"    [{sec}]...")
             time.sleep(1.0)
-        print(f"\n  >>> ĐANG ĐIỀN FORM TRÊN MÀN {disp_id}...")
+        print(f"\n  >>> FILLING FORM ON DISPLAY {disp_id}...")
         filler = SOPFormFiller(cfg)
         filler.fill(case, display_id=disp_id)
-        print(f"  ✅ TEST MÀN {disp_id} HOÀN TẤT!\n")
+        print(f"  ✅ TEST DISPLAY {disp_id} COMPLETED!\n")
         return
 
     # ── run ───────────────────────────────────────────────────────────────────
@@ -297,7 +312,7 @@ Ví dụ:
             hud.set_error(msg)
 
     def on_switch_display(display_id: int):
-        print(f"[SOP] Đã chuyển chế độ sang MÀN HÌNH {display_id}")
+        print(f"[SOP] Switched active mode to DISPLAY {display_id}")
         filler.warmup(display_id)
 
     def on_toggle_display():
@@ -306,12 +321,16 @@ Ví dụ:
         else:
             cur = cfg.get_active_display()
             pair = cfg.get_active_pair()
-            nxt = pair[1] if cur == pair[0] else pair[0]
+            if cur in pair:
+                idx = (pair.index(cur) + 1) % len(pair)
+                nxt = pair[idx]
+            else:
+                nxt = pair[0] if pair else 4
             cfg.set_active_display(nxt)
-            print(f"[SOP] Đổi sang Màn hình {nxt}")
+            print(f"[SOP] Switched to Display {nxt}")
 
     def on_switch_sop_type(new_type: str):
-        print(f"[SOP] Đã chuyển sang Loại SOP: {new_type}")
+        print(f"[SOP] Switched SOP Type to: {new_type}")
 
     def on_toggle_sop_type():
         if hud:
@@ -320,19 +339,19 @@ Ví dụ:
             cur = cfg.get_active_sop_type()
             nxt = "CHRF" if cur == "SUSPECT" else "SUSPECT"
             cfg.set_active_sop_type(nxt)
-            print(f"[SOP] Đổi sang Loại SOP: {nxt}")
+            print(f"[SOP] Switched SOP Type to: {nxt}")
 
     def on_trigger_case(case_key: str):
         with busy_lock:
             if is_busy[0]:
-                print("[SOP] Đang bận điền form, bỏ qua...")
+                print("[SOP] Busy filling form, skipping...")
                 return
             is_busy[0] = True
 
         current_type = cfg.get_active_sop_type()
         type_cases = SOP_CASES_BY_TYPE.get(current_type, SUSPECT_CASES)
 
-        # Ánh xạ hotkey f1..f6 sang c1..c6 nếu đang ở chế độ CHRF
+        # Map hotkeys f1..f6 to c1..c6 when in CHRF mode
         if current_type == "CHRF":
             map_chrf = {
                 "f1": "c1",
@@ -360,7 +379,7 @@ Ví dụ:
                     hud.set_busy(case.name)
                 filler.fill(case, on_status=on_status, display_id=active_disp)
             except Exception as e:
-                print(f"[SOP] Lỗi: {e}")
+                print(f"[SOP] Error: {e}")
                 if hud:
                     hud.set_error(str(e))
             finally:
@@ -380,10 +399,14 @@ Ví dụ:
         if hud:
             hud.stop()
 
-    pair = cfg.get_active_pair()
-    d1, d2 = pair[0], pair[1]
+    def on_switch_profile(profile_name: str):
+        print(f"[SOP] Switched to Profile: {profile_name.upper()}")
+        filler.warmup(cfg.get_active_display())
 
-    # Khởi động hotkey manager
+    pair = cfg.get_active_pair()
+    pair_str = " <-> ".join(f"Disp {m}" for m in pair) if len(pair) > 1 else f"Disp {pair[0]}"
+
+    # Start hotkey manager
     hk_mgr = SOPHotkeyManager(
         cfg,
         on_trigger_case=on_trigger_case,
@@ -392,40 +415,41 @@ Ví dụ:
     )
     hk_mgr.start()
 
-    # Khởi động HUD
+    # Start HUD
     hud = SOPStatusHUD(
         cfg,
         on_trigger_case=on_trigger_case,
         on_exit=on_exit,
         on_switch_display=on_switch_display,
         on_switch_sop_type=on_switch_sop_type,
+        on_switch_profile=on_switch_profile,
     )
 
-    # Xử lý Ctrl+C
+    # Handle Ctrl+C
     def _sigint(sig, frame):
-        print("\n[SOP] Ctrl+C — đang thoát...")
+        print("\n[SOP] Ctrl+C — exiting...")
         on_exit()
         sys.exit(0)
 
     signal.signal(signal.SIGINT, _sigint)
 
-    print("[SOP] Đang chạy Popup HUD và lắng nghe phím tắt:")
-    print(f"      F6       -> Đổi qua lại Màn {d1} (Main) <-> Màn {d2} (Phụ)")
-    print("      F7       -> Đổi qua lại Loại SOP (SUSPECT <-> CHRF)")
+    print("[SOP] Running Popup HUD and listening for hotkeys:")
+    print(f"      F6       -> Toggle {pair_str}")
+    print("      F7       -> Toggle SOP Type (SUSPECT <-> CHRF)")
     print("      INSERT   -> Case 1 (All cam / Align+Extract / Success)")
     print("      HOME     -> Case 2 (No cam / No action / Unsuccessful)")
     print("      PAGE UP  -> Case 3 (All cam / Not pickable)")
     print("      PAGE DN  -> Case 4 (All cam / Align+Ext / CHD)")
     print("      END      -> Case 5 (All cam / No action / No case / Success)")
     print("      DELETE   -> Case 6 (All cam / No action / Rogue / CHD)")
-    print("      (Hoặc click trực tiếp các nút trên Popup HUD)")
-    print("      Đóng Popup HUD hoặc Ctrl+C để thoát.\n")
+    print("      (Or click directly on Popup HUD buttons)")
+    print("      Close Popup HUD or press Ctrl+C to exit.\n")
 
     try:
         hud.run()
     finally:
         on_exit()
-        print("[SOP] Đã thoát.")
+        print("[SOP] Exited.")
 
 
 if __name__ == "__main__":

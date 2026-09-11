@@ -2,15 +2,15 @@
 # Teleops Automation Suite — Python Dependencies
 # ============================================================
 #
-# 👉 BẠN CHỈ DÙNG SOP AUTO-LOGGING? (Cài 5 giây, siêu nhẹ):
+# 👉 ONLY USING SOP AUTO-LOGGING? (Lightweight, 5-second setup):
 #    pip install -r auto_logging/requirements.txt
-#    (Hoặc click đúp file: Install_AutoLogging.bat)
+#    (Or double-click: Install_AutoLogging.bat)
 #
-# 👉 BẠN DÙNG AUTO-CLAIM NHẬN BOT? (Đầy đủ OCR & Vision):
+# 👉 USING AUTO-CLAIM BOT PICKER? (Includes OCR & Vision):
 #    pip install -r auto_claim/requirements.txt
-#    (Hoặc click đúp file: Install_AutoClaim.bat)
+#    (Or double-click: Install_AutoClaim.bat)
 #
-# 👉 BẠN MUỐN CÀI TẤT CẢ THƯ VIỆN CHO CẢ 2 TOOL:
+# 👉 INSTALL ALL DEPENDENCIES FOR BOTH TOOLS:
 #    pip install -r requirements.txt
 # ============================================================
 
@@ -26,9 +26,9 @@ easyocr>=1.7.2
 rapidfuzz>=3.0.0
 
 # ============================================================
-# TÙY CHỌN: Tăng tốc GPU cho EasyOCR (Nếu máy có GPU NVIDIA)
+# OPTIONAL: GPU Acceleration for EasyOCR (NVIDIA GPU required)
 # ============================================================
-# Chạy lệnh sau để cài PyTorch CUDA:
+# Run the following to install PyTorch CUDA:
 #   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
-# Sau đó đổi "gpu": true trong auto_claim/config.json -> "ocr"
+# Then set "gpu": true under "ocr" in auto_claim/config.json
 # ============================================================

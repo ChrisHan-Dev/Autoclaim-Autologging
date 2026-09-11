@@ -1,68 +1,68 @@
 @echo off
-title Cai dat SOP Auto-Logging (5 Giay)
+title Install SOP Auto-Logging Dependencies
 cd /d "%~dp0"
 
 echo =======================================================
-echo   CAI DAT THU VIEN CHO SOP AUTO-LOGGING (SIEU TOC)
+echo   INSTALLING DEPENDENCIES FOR SOP AUTO-LOGGING
 echo =======================================================
 echo.
 
-:: 1. Tu dong tim va them duong dan Python vao PATH
-for %%v in (314 313 312 311 310) do (
-    if exist "%LOCALAPPDATA%\Programs\Python\Python%%v" (
-        set "PATH=%LOCALAPPDATA%\Programs\Python\Python%%v;%LOCALAPPDATA%\Programs\Python\Python%%v\Scripts;%PATH%"
-    )
-    if exist "C:\Program Files\Python%%v" (
-        set "PATH=C:\Program Files\Python%%v;C:\Program Files\Python%%v\Scripts;%PATH%"
-    )
-)
-
-:: 2. Kiem tra Python
+:: Detect Python
+set "PY_CMD="
 python --version >nul 2>&1
-if %errorLevel% neq 0 (
-    echo [THONG BAO] May tinh chua co Python!
-    echo Dang thu tu dong tai va cai dat Python 3.12 qua Windows Winget...
-    winget install Python.Python.3.12 --silent --accept-package-agreements --accept-source-agreements
-    
-    set "PATH=%LOCALAPPDATA%\Programs\Python\Python312;%LOCALAPPDATA%\Programs\Python\Python312\Scripts;C:\Program Files\Python312;C:\Program Files\Python312\Scripts;%PATH%"
-    
-    python --version >nul 2>&1
-    if %errorLevel% neq 0 (
-        echo.
-        echo [LOI] Khong the tu dong cai dat Python tren may nay.
-        echo Ban chi can cai dat Python 1 lan duy nhat:
-        echo   1. Truy cap: https://www.python.org/downloads/
-        echo   2. Tai Python va mo file cai dat.
-        echo   3. [QUAN TRONG]: Tich vao o "Add Python to PATH".
-        echo   4. Cai xong, click dup lai file nay!
-        echo.
-        pause
-        exit /b
-    )
-    echo [OK] Da cai dat Python thanh cong!
-    echo.
+if not errorlevel 1 set "PY_CMD=python"
+
+if not defined PY_CMD (
+    py -3 --version >nul 2>&1
+    if not errorlevel 1 set "PY_CMD=py -3"
 )
 
-echo [1/2] Kiem tra phien ban Python...
-python --version
+if not defined PY_CMD if exist "%LOCALAPPDATA%\Programs\Python\Python311\python.exe" set "PY_CMD=%LOCALAPPDATA%\Programs\Python\Python311\python.exe"
+if not defined PY_CMD if exist "%LOCALAPPDATA%\Programs\Python\Python312\python.exe" set "PY_CMD=%LOCALAPPDATA%\Programs\Python\Python312\python.exe"
+if not defined PY_CMD if exist "%LOCALAPPDATA%\Programs\Python\Python313\python.exe" set "PY_CMD=%LOCALAPPDATA%\Programs\Python\Python313\python.exe"
+if not defined PY_CMD if exist "%LOCALAPPDATA%\Programs\Python\Python314\python.exe" set "PY_CMD=%LOCALAPPDATA%\Programs\Python\Python314\python.exe"
+if not defined PY_CMD if exist "%LOCALAPPDATA%\Programs\Python\Python310\python.exe" set "PY_CMD=%LOCALAPPDATA%\Programs\Python\Python310\python.exe"
+
+if not defined PY_CMD if exist "%USERPROFILE%\AppData\Local\Programs\Python\Python311\python.exe" set "PY_CMD=%USERPROFILE%\AppData\Local\Programs\Python\Python311\python.exe"
+if not defined PY_CMD if exist "%USERPROFILE%\AppData\Local\Programs\Python\Python312\python.exe" set "PY_CMD=%USERPROFILE%\AppData\Local\Programs\Python\Python312\python.exe"
+if not defined PY_CMD if exist "%USERPROFILE%\AppData\Local\Programs\Python\Python313\python.exe" set "PY_CMD=%USERPROFILE%\AppData\Local\Programs\Python\Python313\python.exe"
+
+if not defined PY_CMD if exist "C:\Program Files\Python311\python.exe" set "PY_CMD=C:\Program Files\Python311\python.exe"
+if not defined PY_CMD if exist "C:\Program Files\Python312\python.exe" set "PY_CMD=C:\Program Files\Python312\python.exe"
+if not defined PY_CMD if exist "C:\Program Files\Python313\python.exe" set "PY_CMD=C:\Program Files\Python313\python.exe"
+
+if not defined PY_CMD (
+    echo =======================================================
+    echo   [ERROR] Python was not found on this computer!
+    echo =======================================================
+    echo Please install Python 3.10 or newer from: https://www.python.org/
+    echo Remember to check "Add Python to PATH" during installation.
+    echo.
+    pause
+    exit /b 1
+)
+
+echo [1/2] Checking Python version...
+"%PY_CMD%" --version
 echo.
 
-echo [2/2] Dang cai dat thu vien nhe (pyautogui, Pillow)...
-python -m pip install -r auto_logging/requirements.txt
-
-if %errorLevel% equ 0 (
+echo [2/2] Installing lightweight dependencies: pyautogui, Pillow...
+"%PY_CMD%" -m pip install -r auto_logging/requirements.txt
+if errorlevel 1 (
     echo.
-    echo =======================================================
-    echo   [THANH CONG] CAI DAT HOAN TAT TRONG TICH TAC!
-    echo =======================================================
-    echo Ban da co the su dung ngay SOP Auto-Logging:
-    echo   - Click dup vao: Run_SOP_Admin.bat de bat dau dung.
+    echo [ERROR] An error occurred during installation.
+    echo Please check your internet connection and try again.
     echo.
-) else (
-    echo.
-    echo [LOI] Co van de xay ra trong qua trinh cai dat.
-    echo Vui long kiem tra ket noi mang va thu lai.
-    echo.
+    pause
+    exit /b 1
 )
+
+echo.
+echo =======================================================
+echo   [SUCCESS] INSTALLATION COMPLETED!
+echo =======================================================
+echo You can now use SOP Auto-Logging:
+echo   - Double-click: Run_SOP_Admin.bat to start.
+echo.
 
 pause

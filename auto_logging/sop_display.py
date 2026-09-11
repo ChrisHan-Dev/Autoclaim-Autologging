@@ -1,11 +1,11 @@
 """
 sop_display.py — Multi-Monitor helper for Windows (Matches Windows Display Settings 1, 2, 3, 4)
 ================================================================================================
-Quản lý và định vị toạ độ chính xác theo đúng số thứ tự màn hình trong Windows Settings:
-  - Màn hình 1: Laptop Screen (-1920, -416, 1536x960)
-  - Màn hình 2: Top Ultrawide (217, -1440, 3440x1440)
-  - Màn hình 3: Right Monitor (1920, 0, 1920x1080)
-  - Màn hình 4: Main Monitor  (0, 0, 1920x1080)
+Manages and accurately maps coordinates matching Windows Display Settings monitor numbers:
+  - Display 1: Laptop Screen (-1920, -416, 1536x960)
+  - Display 2: Top Ultrawide (217, -1440, 3440x1440)
+  - Display 3: Right Monitor (1920, 0, 1920x1080)
+  - Display 4: Main Monitor  (0, 0, 1920x1080)
 """
 
 from __future__ import annotations
@@ -58,12 +58,12 @@ class MonitorInfo(TypedDict):
 
 def get_windows_monitors() -> list[MonitorInfo]:
     """
-    Lấy danh sách tất cả các màn hình kết nối trên Windows.
-    Đánh số ID (1, 2, 3, 4...) KHỚP 100% với số hiển thị trong Windows Display Settings.
+    Get the list of all connected displays on Windows.
+    Numbered IDs (1, 2, 3, 4...) match 100% with Windows Display Settings.
     """
     user32 = ctypes.windll.user32
 
-    # 1. Lấy danh sách các GDI device đang gắn vào desktop theo thứ tự Windows
+    # 1. Get list of GDI devices attached to desktop in Windows order
     active_device_order: list[str] = []
     dev = DISPLAY_DEVICEW()
     dev.cb = ctypes.sizeof(DISPLAY_DEVICEW)
@@ -74,12 +74,12 @@ def get_windows_monitors() -> list[MonitorInfo]:
             active_device_order.append(dev.DeviceName)
         i += 1
 
-    # Tạo map từ tên device (vd: \\.\DISPLAY7) sang số thứ tự Windows (1, 2, 3, 4)
+    # Map device name (e.g. \\.\DISPLAY7) to Windows display index (1, 2, 3, 4)
     device_to_win_num: dict[str, int] = {
         name: idx for idx, name in enumerate(active_device_order, start=1)
     }
 
-    # 2. Lấy toạ độ thực tế của từng màn hình qua EnumDisplayMonitors
+    # 2. Get actual coordinates for each display via EnumDisplayMonitors
     raw_monitors = {}
 
     def _enum_proc(h_monitor, hdc_monitor, lprc_monitor, dw_data):
@@ -107,10 +107,10 @@ def get_windows_monitors() -> list[MonitorInfo]:
         if dev_name in raw_monitors:
             mon = raw_monitors[dev_name]
             win_id = device_to_win_num.get(dev_name, len(result) + 1)
-            role = "Main" if mon["is_primary"] else "Phụ"
+            role = "Main" if mon["is_primary"] else "Secondary"
             result.append({
                 "id": win_id,
-                "name": f"Màn hình {win_id} ({role})",
+                "name": f"Display {win_id} ({role})",
                 "is_primary": mon["is_primary"],
                 "x": mon["x"],
                 "y": mon["y"],
@@ -124,14 +124,14 @@ def get_windows_monitors() -> list[MonitorInfo]:
 
 def get_monitor_bounds(display_id: int = 4) -> tuple[int, int, int, int]:
     """
-    Trả về (x, y, width, height) của màn hình theo số Windows Display (ví dụ: 1, 2, 3, 4).
+    Return (x, y, width, height) of the display by Windows Display number (e.g., 1, 2, 3, 4).
     """
     monitors = get_windows_monitors()
     for m in monitors:
         if m["id"] == display_id:
             return m["x"], m["y"], m["width"], m["height"]
 
-    # Fallback tìm primary nếu display_id không tồn tại
+    # Fallback to primary if display_id does not exist
     for m in monitors:
         if m["is_primary"]:
             return m["x"], m["y"], m["width"], m["height"]

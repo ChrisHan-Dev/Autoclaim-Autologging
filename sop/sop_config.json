@@ -83,7 +83,7 @@
   ],
   "displays": {
     "4": {
-      "name": "Màn hình 4 (Main)",
+      "name": "Display 4 (Main)",
       "form_coords": {
         "vision_functionality": {
           "x": 252,
@@ -134,7 +134,7 @@
       }
     },
     "3": {
-      "name": "Màn hình 3 (Phụ)",
+      "name": "Display 3 (Secondary)",
       "form_coords": {
         "vision_functionality": {
           "x": 2197,

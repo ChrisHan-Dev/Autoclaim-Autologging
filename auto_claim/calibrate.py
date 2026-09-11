@@ -236,6 +236,9 @@ class CalibrationTool:
         else:
             self._log.info("Calibration complete — all regions configured.")
 
+        # Offer to save calibration into a named profile
+        self._prompt_save_profile()
+
     def _run_gui(self, master: Optional[tk.Tk] = None) -> None:
         """Launch overlay GUI and block until done."""
         overlay = _CalibrationOverlay(master)
@@ -258,4 +261,27 @@ class CalibrationTool:
         username = input("Enter your Teleops username (shown in CLAIM cell after claiming): ").strip()
         if username:
             self._cfg.set("username", username)
+
+    def _prompt_save_profile(self) -> None:
+        """Ask user if they want to save the calibrated layout into a named profile."""
+        profiles = self._cfg.list_profiles()
+        active = self._cfg.get_active_profile()
+        print("\n" + "=" * 55)
+        print("  🆔 Save layout to Profile?")
+        print(f"  Current profile: [{active.upper()}]")
+        print(f"  Available profiles: {', '.join(profiles)}")
+        print("  Enter profile name to save (e.g. home / office) or Enter to skip:")
+        print("=" * 55)
+        choice = input("  >>> ").strip().lower()
+        if choice and choice in profiles:
+            self._cfg.save_profile(choice)
+            self._cfg.switch_profile(choice)
+            print(f"  ✓ Saved to profile '{choice.upper()}'!")
+        elif choice:
+            # User typed a new profile name
+            self._cfg.save_profile(choice)
+            self._cfg.switch_profile(choice)
+            print(f"  ✓ Created and saved new profile '{choice.upper()}'!")
+        else:
+            print("  (Skipped saving profile)")
 

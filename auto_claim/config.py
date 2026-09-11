@@ -1,6 +1,7 @@
 """
 config.py — ConfigManager
 Loads, validates, and saves all runtime configuration from/to config.json.
+Supports Home / Office display profiles for instant layout switching.
 """
 
 from __future__ import annotations
@@ -128,9 +129,18 @@ class ConfigManager:
             self._data = self._deep_merge(_DEFAULTS, on_disk)
         else:
             self._data = deepcopy(_DEFAULTS)
+            self._data["active_profile"] = "office"
+        self._ensure_profiles()
+        active_prof = self.get_active_profile()
+        profiles = self._data.get("profiles", {})
+        if active_prof in profiles:
+            self._apply_layout(profiles[active_prof])
 
     def save(self) -> None:
         """Persist current config to disk (pretty-printed JSON)."""
+        active_prof = self.get_active_profile()
+        if "profiles" in self._data and active_prof in self._data.get("profiles", {}):
+            self._data["profiles"][active_prof] = self._snapshot_layout()
         self._path.parent.mkdir(parents=True, exist_ok=True)
         with self._path.open("w", encoding="utf-8") as fh:
             json.dump(self._data, fh, indent=2)
@@ -238,6 +248,103 @@ class ConfigManager:
         """Return True if at minimum the table_region has been set."""
         tr = self._data["table_region"]
         return tr.get("left", -1) >= 0 and tr.get("width", -1) > 0
+
+    # ------------------------------------------------------------------
+    # Profile API
+    # ------------------------------------------------------------------
+
+    # Keys that are layout/calibration-specific and belong inside a profile
+    _PROFILE_KEYS: tuple[str, ...] = (
+        "monitor_index",
+        "table_region",
+        "site_column",
+        "type_column",
+        "alarm_column",
+        "claim_column",
+        "select_column",
+        "connect_button",
+        "status_window_x",
+        "status_window_y",
+    )
+
+    def _snapshot_layout(self) -> dict:
+        """Capture current calibration/layout keys for a profile snapshot."""
+        return {k: deepcopy(self._data[k]) for k in self._PROFILE_KEYS if k in self._data}
+
+    def _apply_layout(self, snap: dict) -> None:
+        """Write profile snapshot back into live _data."""
+        for k in self._PROFILE_KEYS:
+            if k in snap:
+                self._data[k] = deepcopy(snap[k])
+
+    def _ensure_profiles(self) -> None:
+        """Ensure 'home' and 'office' profiles exist (run once after load)."""
+        profiles = self._data.setdefault("profiles", {})
+        if "active_profile" not in self._data:
+            self._data["active_profile"] = "office"
+        if "office" not in profiles:
+            profiles["office"] = self._snapshot_layout()
+        if "home" not in profiles:
+            # Home starts as a blank (uncalibrated) copy
+            blank: dict = {
+                "monitor_index": self._data.get("monitor_index", 1),
+                "table_region":  {"left": -1, "top": -1, "width": -1, "height": -1},
+                "site_column":   {"left": -1, "top": -1, "width": -1, "height": -1},
+                "type_column":   {"left": -1, "top": -1, "width": -1, "height": -1},
+                "alarm_column":  {"left": -1, "top": -1, "width": -1, "height": -1},
+                "claim_column":  {"left": -1, "top": -1, "width": -1, "height": -1},
+                "select_column": {"left": -1, "top": -1, "width": -1, "height": -1},
+                "connect_button": {"x": -1, "y": -1},
+                "status_window_x": self._data.get("status_window_x", 100),
+                "status_window_y": self._data.get("status_window_y", 100),
+            }
+            profiles["home"] = blank
+
+    def list_profiles(self) -> list[str]:
+        """Return list of saved profile names, e.g. ['home', 'office']."""
+        return list(self._data.get("profiles", {}).keys())
+
+    def get_active_profile(self) -> str:
+        """Return the name of the currently active profile."""
+        return str(self._data.get("active_profile", "office"))
+
+    def save_profile(self, name: str) -> None:
+        """Snapshot current layout into profile *name* and persist."""
+        name = name.lower().strip()
+        profiles = self._data.setdefault("profiles", {})
+        profiles[name] = self._snapshot_layout()
+        if "active_profile" not in self._data:
+            self._data["active_profile"] = name
+        self.save()
+
+    def switch_profile(self, name: str) -> None:
+        """
+        Load profile *name* into the live config keys.
+        All existing callers (table_region, connect_button, etc.) will
+        automatically see the new values after this call.
+        """
+        name = name.lower().strip()
+        profiles = self._data.get("profiles", {})
+        if name not in profiles:
+            raise KeyError(f"Profile '{name}' not found. Available: {list(profiles.keys())}")
+
+        # Preserve the current profile's latest layout before switching
+        current = self.get_active_profile()
+        if current in profiles and current != name:
+            profiles[current] = self._snapshot_layout()
+
+        self._apply_layout(profiles[name])
+        self._data["active_profile"] = name
+        self.save()
+
+    def delete_profile(self, name: str) -> None:
+        """Remove a profile (cannot delete the currently active one)."""
+        if name == self.get_active_profile():
+            raise ValueError(f"Cannot delete the currently active profile '{name}'.")
+        profiles = self._data.get("profiles", {})
+        if name in profiles:
+            del profiles[name]
+            self.save()
 
     def validate(self) -> list[str]:
         """
